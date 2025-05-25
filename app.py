@@ -15,26 +15,63 @@ if "bookmarks" not in st.session_state:
 # --- CSS Styling ---
 css = """
 <style>
-/* Starry Night Flicker Background */
+/* Starry Night Flicker Background with CSS stars */
 section.main {
   background: #0a0a23;
   position: relative;
   overflow: hidden;
+  height: 100vh;
 }
 
+/* Create many small white dots as stars */
 section.main::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: transparent url("https://www.transparenttextures.com/patterns/stardust.png") repeat;
-  animation: twinkle 5s infinite alternate;
-  opacity: 0.2;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  background: transparent;
+  box-shadow:
+    20px 30px white,
+    50px 80px white,
+    100px 120px white,
+    130px 150px white,
+    160px 40px white,
+    200px 90px white,
+    230px 200px white,
+    270px 130px white,
+    300px 170px white,
+    340px 60px white,
+    380px 110px white,
+    410px 150px white,
+    450px 40px white,
+    490px 90px white,
+    530px 130px white,
+    570px 200px white,
+    600px 50px white,
+    650px 100px white,
+    700px 150px white,
+    740px 60px white;
+  animation: twinkle 3s infinite alternate ease-in-out;
   z-index: 0;
+  border-radius: 50%;
 }
 
+/* Twinkle animation for flickering effect */
 @keyframes twinkle {
-  0%, 100% {opacity: 0.2;}
-  50% {opacity: 0.5;}
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
 }
 
 /* Title */
@@ -46,6 +83,8 @@ section.main::before {
     margin-top: 30px;
     margin-bottom: 40px;
     text-shadow: 2px 2px 5px #311b92;
+    position: relative;
+    z-index: 1;
 }
 
 /* Card styles */
