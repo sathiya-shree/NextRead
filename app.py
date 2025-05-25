@@ -1,84 +1,73 @@
 import streamlit as st
 import pandas as pd
+import random
 
-# Set page config
+# --- Page Config ---
 st.set_page_config(page_title="NextRead", layout="wide")
 
-# Load data
+# --- Load Data ---
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 
-# Inject starry night CSS
-st.markdown("""
+# --- Initialize bookmarks ---
+if "bookmarks" not in st.session_state:
+    st.session_state.bookmarks = []
+
+# --- CSS Styling ---
+css = """
 <style>
-body {
-    background-color: black !important;
+/* Solid background color */
+section.main {
+    background-color: #0d1117; /* Dark navy */
     color: white;
 }
 
-.starry-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: black;
-    overflow: hidden;
-    z-index: -1;
+/* Title */
+.main-title {
+    color: #ffde59;
+    font-size: 3.2em;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 30px;
+    margin-bottom: 40px;
+    text-shadow: 2px 2px 4px #222;
 }
 
-.star {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: white;
-    border-radius: 50%;
-    animation: twinkle 2s infinite;
+/* Card styles */
+.card {
+    background-color: #161b22;
+    color: white;
+    box-shadow: 0 6px 15px rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 25px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
 }
 
-@keyframes twinkle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
+.bookmark-btn {
+    background-color: #ffde59;
+    color: black;
+    padding: 7px 12px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+    font-weight: bold;
 }
-
-.moon {
-    position: absolute;
-    top: 40px;
-    right: 60px;
-    width: 80px;
-    height: 80px;
-    background: radial-gradient(circle at 30% 30%, #fdfcdc, #dcdcdc);
-    border-radius: 50%;
-    box-shadow: 0 0 60px #fdfcdc;
-    z-index: -1;
-}
-
-.shooting-star {
-    position: absolute;
-    top: 20%;
-    left: 80%;
-    width: 2px;
-    height: 100px;
-    background: linear-gradient(white, transparent);
-    transform: rotate(-45deg);
-    animation: shoot 4s infinite linear;
-}
-
-@keyframes shoot {
-    0% { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 1; }
-    100% { transform: translateX(-500px) translateY(500px) rotate(-45deg); opacity: 0; }
+.bookmark-btn:hover {
+    background-color: #f5c518;
 }
 </style>
+"""
+st.markdown(css, unsafe_allow_html=True)
 
-<div class="starry-bg">
-    <div class="moon"></div>
-    <div class="shooting-star"></div>
-    """ +
-    "".join([f'<div class="star" style="top: {i*5 % 100}vh; left: {(i*11) % 100}vw;"></div>' for i in range(100)]) +
-    "</div>", unsafe_allow_html=True)
+# --- App Title ---
+st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
 
-
-
-# --- Helper Functions ---
+# --- Book Filter Functions ---
 def get_books_by_author(author_name):
     matches = df[df['authors'].str.lower().str.contains(author_name.lower(), na=False)]
     return matches[['title', 'average_ratings', 'authors']] if not matches.empty else None
@@ -87,13 +76,14 @@ def get_rating_by_title(book_title):
     matches = df[df['title'].str.lower().str.contains(book_title.lower(), na=False)]
     return matches[['title', 'authors', 'average_ratings']] if not matches.empty else None
 
+# --- Display Book Cards ---
 def display_books(books):
-    for _, row in books.iterrows():
+    for i, row in books.iterrows():
         book_id = f"{row['title']}|{row['authors']}"
         is_bookmarked = book_id in st.session_state.bookmarks
         bookmark_text = "🔖 Remove Bookmark" if is_bookmarked else "⭐ Bookmark"
         st.markdown(f"""
-            <div style="background-color: #1e1e1ecc; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(255,255,255,0.2);">
+            <div class='card'>
                 <strong>📖 {row['title']}</strong><br>
                 ✍️ Author: {row['authors']}<br>
                 ⭐ Average Rating: {row['average_ratings']}
@@ -106,7 +96,7 @@ def display_books(books):
                 st.session_state.bookmarks.append(book_id)
             st.experimental_rerun()
 
-# --- Search UI ---
+# --- Search Feature ---
 search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True)
 
 if search_type == 'authors':
@@ -139,7 +129,7 @@ if st.button("🎲 Surprise Me!"):
     is_bookmarked = book_id in st.session_state.bookmarks
     bookmark_text = "🔖 Remove Bookmark" if is_bookmarked else "⭐ Bookmark"
     st.markdown(f"""
-        <div style="background-color: #1e1e1ecc; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(255,255,255,0.2);">
+        <div class='card'>
             <strong>📖 {random_book['title']}</strong><br>
             ✍️ Author: {random_book['authors']}<br>
             ⭐ Average Rating: {random_book['average_ratings']}
@@ -152,7 +142,7 @@ if st.button("🎲 Surprise Me!"):
             st.session_state.bookmarks.append(book_id)
         st.experimental_rerun()
 
-# --- Bookmarks ---
+# --- Bookmarks Section ---
 if st.session_state.bookmarks:
     st.markdown("---")
     st.markdown("### 🔖 Your Bookmarks")
@@ -160,7 +150,7 @@ if st.session_state.bookmarks:
         title, author = bm.split("|")
         bm_data = df[(df['title'] == title) & (df['authors'] == author)].iloc[0]
         st.markdown(f"""
-            <div style="background-color: #1e1e1ecc; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(255,255,255,0.2);">
+            <div class='card'>
                 <strong>📖 {bm_data['title']}</strong><br>
                 ✍️ Author: {bm_data['authors']}<br>
                 ⭐ Average Rating: {bm_data['average_ratings']}
