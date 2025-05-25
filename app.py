@@ -1,107 +1,80 @@
 import streamlit as st
 import pandas as pd
 
-# Custom CSS for styling and animation
-st.markdown(
-    """
-    <style>
-    @keyframes fadeIn {
-        0% {opacity: 0; transform: translateY(-10px);}
-        100% {opacity: 1; transform: translateY(0);}
-    }
-
-    .stApp {
-        background: linear-gradient(to right, #e0c3fc, #8ec5fc);
-        font-family: 'Segoe UI', sans-serif;
-        animation: fadeIn 2s ease-in;
-    }
-
-    .title-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        text-align: center;
-        animation: fadeIn 2s ease-in-out;
-        padding-top: 30px;
-        padding-bottom: 20px;
-    }
-
-    .main-title {
-        font-size: 48px;
-        font-weight: 900;
-        color: #4a148c;
-        margin-bottom: 10px;
-        text-shadow: 2px 2px 4px #ddd;
-        letter-spacing: 2px;
-    }
-
-    .logo {
-        height: 60px;
-        margin-bottom: 10px;
-    }
-
-    .stRadio > div {
-        flex-direction: row;
-        justify-content: center;
-    }
-
-    .stTextInput input {
-        border-radius: 8px;
-        padding: 10px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# Centered title and logo (optional)
-st.markdown(
-    """
-    <div class="title-container">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/HD_transparent_picture.png/600px-HD_transparent_picture.png" class="logo">
-        <div class="main-title">NextRead</div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# Load the dataset
+# --- Load Data ---
 df = pd.read_csv("required.csv")
 
-# Function to get books by author
+# --- Book Filter Functions ---
 def get_books_by_author(author_name):
-    matching_books = df[df['authors'].str.lower().str.contains(author_name.lower())]
-    if not matching_books.empty:
-        return matching_books[['title', 'average_ratings']]
-    return None
+    matches = df[df['authors'].str.lower().str.contains(author_name.lower())]
+    return matches[['title', 'average_ratings']] if not matches.empty else None
 
-# Function to get books by title
 def get_rating_by_title(book_title):
-    matching_books = df[df['title'].str.lower().str.contains(book_title.lower())]
-    if not matching_books.empty:
-        return matching_books[['title', 'authors', 'average_ratings']]
-    return None
+    matches = df[df['title'].str.lower().str.contains(book_title.lower())]
+    return matches[['title', 'authors', 'average_ratings']] if not matches.empty else None
 
-# Streamlit search UI
-search_option = st.radio("Search by:", ['authors', 'title'])
+# --- Theme Switcher ---
+theme = st.selectbox("Choose Theme", ["Light", "Dark"])
 
-if search_option == 'authors':
-    author_input = st.text_input("Enter author name:")
-    if author_input:
-        results = get_books_by_author(author_input)
-        if results is not None:
-            st.success(f"Books by '{author_input}':")
-            st.dataframe(results.reset_index(drop=True), use_container_width=True)
+light_css = """
+    <style>
+    body { background: #f9f9f9; color: #333; }
+    .main-title { color: #4a148c; }
+    .card { background-color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 12px; padding: 20px; transition: transform 0.3s ease; }
+    .card:hover { transform: scale(1.03); }
+    </style>
+"""
+
+dark_css = """
+    <style>
+    body { background: #121212; color: #e0e0e0; }
+    .main-title { color: #bb86fc; }
+    .card { background-color: #1f1f1f; box-shadow: 0 4px 8px rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; transition: transform 0.3s ease; }
+    .card:hover { transform: scale(1.03); }
+    </style>
+"""
+
+st.markdown(dark_css if theme == "Dark" else light_css, unsafe_allow_html=True)
+
+# --- Animated Title ---
+st.markdown("""
+    <div style='text-align: center; padding-top: 20px;'>
+        <h1 class='main-title' style='font-size: 3em;'>📖 NextRead</h1>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- Search Feature ---
+search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True)
+
+if search_type == 'authors':
+    author = st.text_input("Enter author name:")
+    if author:
+        books = get_books_by_author(author)
+        if books is not None:
+            st.markdown("<h3>Books by Author:</h3>", unsafe_allow_html=True)
+            for _, row in books.iterrows():
+                st.markdown(f"""
+                    <div class='card'>
+                        <strong>📚 {row['title']}</strong><br>
+                        ⭐ Average Rating: {row['average_ratings']}
+                    </div><br>
+                """, unsafe_allow_html=True)
         else:
-            st.warning(f"No books found for author '{author_input}'.")
+            st.warning(f"No books found for '{author}'.")
 
-elif search_option == 'title':
-    title_input = st.text_input("Enter book title:")
-    if title_input:
-        results = get_rating_by_title(title_input)
-        if results is not None:
-            st.success(f"Book(s) matching '{title_input}':")
-            st.dataframe(results.reset_index(drop=True), use_container_width=True)
+elif search_type == 'title':
+    title = st.text_input("Enter book title:")
+    if title:
+        books = get_rating_by_title(title)
+        if books is not None:
+            st.markdown("<h3>Matching Book(s):</h3>", unsafe_allow_html=True)
+            for _, row in books.iterrows():
+                st.markdown(f"""
+                    <div class='card'>
+                        <strong>📖 {row['title']}</strong><br>
+                        ✍️ Author: {row['authors']}<br>
+                        ⭐ Average Rating: {row['average_ratings']}
+                    </div><br>
+                """, unsafe_allow_html=True)
         else:
-            st.warning(f"No books found with title '{title_input}'.")
+            st.warning(f"No books found with title '{title}'.")
