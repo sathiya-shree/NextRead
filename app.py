@@ -12,43 +12,42 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling ---
+# --- CSS Styling (Black background, no animation) ---
 css = """
 <style>
-/* Solid background color */
-section.main {
-    background-color: #0d1117; /* Dark navy */
+body {
+    background-color: #000000;
     color: white;
 }
 
 /* Title */
 .main-title {
-    color: #ffde59;
+    color: #FFD700;
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
     margin-bottom: 40px;
-    text-shadow: 2px 2px 4px #222;
+    text-shadow: 2px 2px 4px #333;
 }
 
 /* Card styles */
 .card {
-    background-color: #161b22;
+    background-color: #1c1c1c;
     color: white;
-    box-shadow: 0 6px 15px rgba(255, 255, 255, 0.05);
+    box-shadow: 0 6px 15px rgba(255,255,255,0.05);
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 25px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+    transform: scale(1.02);
+    box-shadow: 0 10px 25px rgba(255,255,255,0.1);
 }
 
 .bookmark-btn {
-    background-color: #ffde59;
+    background-color: #FFD700;
     color: black;
     padding: 7px 12px;
     border-radius: 5px;
@@ -58,7 +57,7 @@ section.main {
     font-weight: bold;
 }
 .bookmark-btn:hover {
-    background-color: #f5c518;
+    background-color: #daa520;
 }
 </style>
 """
