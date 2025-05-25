@@ -135,12 +135,13 @@ st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
 
 # --- Book Filter Functions ---
 def get_books_by_author(author_name):
-    matches = df[df['authors'].str.lower().str.contains(author_name.lower())]
+    matches = df[df['authors'].str.lower().str.contains(author_name.lower(), na=False)]
     return matches[['title', 'average_ratings', 'authors']] if not matches.empty else None
 
 def get_rating_by_title(book_title):
-    matches = df[df['title'].str.lower().str.contains(book_title.lower())]
+    matches = df[df['title'].str.lower().str.contains(book_title.lower(), na=False)]
     return matches[['title', 'authors', 'average_ratings']] if not matches.empty else None
+
 
 # --- Display Book Cards ---
 def display_books(books):
