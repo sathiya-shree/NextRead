@@ -16,104 +16,71 @@ def get_rating_by_title(book_title):
     matches = df[df['title'].str.lower().str.contains(book_title.lower())]
     return matches[['title', 'authors', 'average_ratings']] if not matches.empty else None
 
-# --- Theme Switcher ---
-theme = st.selectbox("Choose Theme", ["Light", "Dark"])
+# --- Inject CSS for smooth animated gradient and styling ---
+st.markdown("""
+<style>
+/* Smooth infinite gradient animation */
+section.main {
+    background: linear-gradient(270deg, #f6d365, #fda085, #fbc7a4, #f6d365);
+    background-size: 800% 800%;
+    animation: gradientAnimation 30s ease infinite;
+    padding: 2rem;
+    border-radius: 12px;
+}
 
-light_css = """
-    <style>
-    /* Light theme gradient background */
-    section.main {
-        background: linear-gradient(45deg, #ffe4e1, #e0f7fa, #fff9c4, #ffe4e1);
-        background-size: 400% 400%;
-        animation: bg-animation 15s ease infinite;
-        padding: 2rem;
-    }
+/* Main container background */
+div[data-testid="stAppViewContainer"] {
+    background: linear-gradient(270deg, #f6d365, #fda085, #fbc7a4, #f6d365);
+    background-size: 800% 800%;
+    animation: gradientAnimation 30s ease infinite;
+    min-height: 100vh;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
 
-    div[data-testid="stAppViewContainer"] {
-        background: linear-gradient(45deg, #ffe4e1, #e0f7fa, #fff9c4, #ffe4e1);
-        background-size: 400% 400%;
-        animation: bg-animation 15s ease infinite;
-    }
+/* Gradient keyframes */
+@keyframes gradientAnimation {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
 
-    @keyframes bg-animation {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+/* Title styling */
+.main-title {
+    color: #4B0082;
+    font-size: 3.5rem;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+}
 
-    .main-title {
-        color: #6a1b9a;
-        font-size: 3em;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 30px;
-    }
+/* Card styling */
+.card {
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    padding: 20px 25px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 1rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-    .card {
-        background-color: #ffffffcc;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        border-radius: 15px;
-        padding: 20px;
-        transition: transform 0.3s ease;
-    }
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+}
 
-    .card:hover {
-        transform: scale(1.05);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    }
-    </style>
-"""
-
-dark_css = """
-    <style>
-    /* Dark theme gradient background */
-    section.main {
-        background: linear-gradient(45deg, #1a237e, #0d47a1, #1976d2, #1a237e);
-        background-size: 400% 400%;
-        animation: bg-animation-dark 15s ease infinite;
-        padding: 2rem;
-        color: #e0e0e0;
-    }
-
-    div[data-testid="stAppViewContainer"] {
-        background: linear-gradient(45deg, #1a237e, #0d47a1, #1976d2, #1a237e);
-        background-size: 400% 400%;
-        animation: bg-animation-dark 15s ease infinite;
-        color: #e0e0e0;
-    }
-
-    @keyframes bg-animation-dark {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    .main-title {
-        color: #bb86fc;
-        font-size: 3em;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 30px;
-    }
-
-    .card {
-        background-color: #2c2c54cc;
-        box-shadow: 0 4px 12px rgba(255,255,255,0.1);
-        border-radius: 15px;
-        padding: 20px;
-        transition: transform 0.3s ease;
-        color: #e0e0e0;
-    }
-
-    .card:hover {
-        transform: scale(1.05);
-        box-shadow: 0 8px 24px rgba(255,255,255,0.3);
-    }
-    </style>
-"""
-
-# Apply selected theme CSS
-st.markdown(dark_css if theme == "Dark" else light_css, unsafe_allow_html=True)
+/* Subheadings */
+h3 {
+    color: #4B0082;
+    font-weight: 700;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-bottom: 1rem;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # --- App Title ---
 st.markdown("<h1 class='main-title'>NextRead 📚</h1>", unsafe_allow_html=True)
@@ -132,7 +99,7 @@ if search_type == 'authors':
                     <div class='card'>
                         <strong>📘 {row['title']}</strong><br>
                         ⭐ Average Rating: {row['average_ratings']}
-                    </div><br>
+                    </div>
                 """, unsafe_allow_html=True)
         else:
             st.warning(f"No books found for '{author}'.")
@@ -149,7 +116,7 @@ elif search_type == 'title':
                         <strong>📖 {row['title']}</strong><br>
                         ✍️ Author: {row['authors']}<br>
                         ⭐ Average Rating: {row['average_ratings']}
-                    </div><br>
+                    </div>
                 """, unsafe_allow_html=True)
         else:
             st.warning(f"No books found with title '{title}'.")
