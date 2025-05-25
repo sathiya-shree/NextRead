@@ -1,32 +1,60 @@
 import streamlit as st
 import pandas as pd
 
+# Custom CSS for styling, background, animations, and layout
 st.markdown(
     """
     <style>
-    body {
-        background-color: #f0f2f6;
+    @keyframes fadeIn {
+        0% {opacity: 0;}
+        100% {opacity: 1;}
     }
+
     .stApp {
         background: linear-gradient(135deg, #e0f7fa, #fce4ec);
         color: #333;
-        font-family: 'Arial', sans-serif;
+        font-family: 'Segoe UI', sans-serif;
+        animation: fadeIn 2s ease-in;
     }
+
+    .header-container {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        animation: fadeIn 2s ease-in;
+        margin-bottom: 30px;
+    }
+
+    .logo {
+        height: 60px;
+    }
+
+    .main-title {
+        font-size: 40px;
+        font-weight: 800;
+        color: #6a1b9a;
+        margin: 0;
+    }
+
     .stRadio > div {
         flex-direction: row;
-    }
-    .title {
-        font-size: 36px;
-        font-weight: bold;
-        color: #6a1b9a;
-        text-align: center;
-        margin-bottom: 20px;
+        justify-content: center;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
+# Logo and main title
+st.markdown(
+    """
+    <div class="header-container">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/HD_transparent_picture.png/600px-HD_transparent_picture.png" class="logo">
+        <h1 class="main-title">NextRead</h1>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # Load the dataset
 df = pd.read_csv('required.csv')
@@ -47,9 +75,7 @@ def get_rating_by_title(book_title):
     else:
         return None
 
-# Streamlit UI
-st.title("📚 Book Info Finder")
-
+# Search UI
 search_option = st.radio("Search by:", ['authors', 'title'])
 
 if search_option == 'authors':
@@ -57,8 +83,8 @@ if search_option == 'authors':
     if author_input:
         results = get_books_by_author(author_input)
         if results is not None:
-            st.write(f"Books by '{author_input}':")
-            st.dataframe(results, use_container_width=True)
+            st.success(f"Books by '{author_input}':")
+            st.dataframe(results.reset_index(drop=True), use_container_width=True)
         else:
             st.warning(f"No books found for author '{author_input}'.")
 
@@ -67,7 +93,7 @@ elif search_option == 'title':
     if title_input:
         results = get_rating_by_title(title_input)
         if results is not None:
-            st.write(f"Book(s) matching '{title_input}':")
-            st.dataframe(results, use_container_width=True)
+            st.success(f"Book(s) matching '{title_input}':")
+            st.dataframe(results.reset_index(drop=True), use_container_width=True)
         else:
             st.warning(f"No books found with title '{title_input}'.")
