@@ -20,18 +20,29 @@ def get_rating_by_title(book_title):
 theme = st.selectbox("Choose Theme", ["Light", "Dark"])
 
 light_css = """
+  st.markdown("""
     <style>
-    body {
+    /* This targets the main content area */
+    section.main {
         background: linear-gradient(45deg, #ffe4e1, #e0f7fa, #fff9c4, #ffe4e1);
         background-size: 400% 400%;
         animation: bg-animation 15s ease infinite;
-        color: #000;
+        padding: 2rem;
     }
+
+    /* Optional: Customize the entire app container */
+    div[data-testid="stAppViewContainer"] {
+        background: linear-gradient(45deg, #ffe4e1, #e0f7fa, #fff9c4, #ffe4e1);
+        background-size: 400% 400%;
+        animation: bg-animation 15s ease infinite;
+    }
+
     @keyframes bg-animation {
-        0% {background-position: 0% 50%;}
-        50% {background-position: 100% 50%;}
-        100% {background-position: 0% 50%;}
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
+
     .main-title {
         color: #6a1b9a;
         font-size: 3em;
@@ -39,6 +50,7 @@ light_css = """
         text-align: center;
         margin-top: 30px;
     }
+
     .card {
         background-color: #ffffffcc;
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -46,45 +58,14 @@ light_css = """
         padding: 20px;
         transition: transform 0.3s ease;
     }
+
     .card:hover {
         transform: scale(1.05);
         box-shadow: 0 8px 24px rgba(0,0,0,0.2);
     }
     </style>
-"""
+""", unsafe_allow_html=True)
 
-dark_css = """
-    <style>
-    body {
-        background: linear-gradient(45deg, #0f2027, #203a43, #2c5364);
-        background-size: 400% 400%;
-        animation: bg-animation-dark 15s ease infinite;
-        color: #fff;
-    }
-    @keyframes bg-animation-dark {
-        0% {background-position: 0% 50%;}
-        50% {background-position: 100% 50%;}
-        100% {background-position: 0% 50%;}
-    }
-    .main-title {
-        color: #bb86fc;
-        font-size: 3em;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 30px;
-    }
-    .card {
-        background-color: #1e1e1ecc;
-        box-shadow: 0 4px 12px rgba(255,255,255,0.05);
-        border-radius: 15px;
-        padding: 20px;
-        transition: transform 0.3s ease;
-    }
-    .card:hover {
-        transform: scale(1.05);
-        box-shadow: 0 8px 24px rgba(255,255,255,0.15);
-    }
-    </style>
 """
 
 st.markdown(dark_css if theme == "Dark" else light_css, unsafe_allow_html=True)
