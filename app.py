@@ -3,7 +3,7 @@ import pandas as pd
 import random
 
 # --- Page Config ---
-st.set_page_config(page_title="NextRead", layout="wide")
+st.set_page_config(page_title="NextRead", layout="wide", page_icon="📚")
 
 # --- Load Data ---
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
@@ -12,40 +12,29 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (with animation and effects) ---
+# --- CSS Styling (Dark mode, no glow on title) ---
 css = """
 <style>
 body {
-    background-color: #000000;
+    background-color: #121212;
     color: white;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Animated Title */
+/* Title without glow */
 .main-title {
-    color: #FFD700;
+    color: #FFD700;  /* Gold color */
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
     margin-bottom: 40px;
-    animation: glow 2s ease-in-out infinite alternate;
-    text-shadow: 0 0 5px #FFD700, 0 0 10px #FFA500, 0 0 20px #FF8C00;
-}
-
-/* Glow animation */
-@keyframes glow {
-    from {
-        text-shadow: 0 0 10px #FFD700, 0 0 20px #FFA500, 0 0 30px #FF8C00;
-    }
-    to {
-        text-shadow: 0 0 20px #FFA500, 0 0 30px #FF8C00, 0 0 40px #FF4500;
-    }
+    text-shadow: none;
 }
 
 /* Card styles */
 .card {
-    background-color: #1c1c1c;
+    background-color: #1f1f1f;
     color: white;
     box-shadow: 0 6px 15px rgba(255,255,255,0.05);
     border-radius: 15px;
@@ -56,7 +45,7 @@ body {
 }
 .card:hover {
     transform: scale(1.02);
-    box-shadow: 0 10px 25px rgba(255,255,255,0.2);
+    box-shadow: 0 10px 25px rgba(255,255,255,0.15);
 }
 
 /* Fade in effect */
@@ -83,19 +72,13 @@ body {
     box-shadow: 0 0 15px #FFD700;
 }
 
-/* Divider animation */
+/* Divider */
 hr {
     border: none;
     height: 2px;
     background: linear-gradient(90deg, #FFD700, #FF8C00, #FFD700);
-    animation: move 2s linear infinite;
     margin-top: 40px;
     margin-bottom: 40px;
-}
-
-@keyframes move {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 100% 50%; }
 }
 </style>
 """
