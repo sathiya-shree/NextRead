@@ -18,63 +18,80 @@ theme = st.selectbox("Choose Theme", ["Light", "Dark"])
 
 light_css = """
     <style>
-    section[data-testid="stAppViewContainer"] {
-        background-color: #f9f9f9 !important;
-        color: #333 !important;
+    /* Animate background gradient */
+    @keyframes bg-gradient {
+        0% {background-position: 0% 50%;}
+        50% {background-position: 100% 50%;}
+        100% {background-position: 0% 50%;}
     }
-    .main-title { color: #4a148c; }
+
+    section[data-testid="stAppViewContainer"] {
+        background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #ff9a9e);
+        background-size: 400% 400%;
+        animation: bg-gradient 15s ease infinite;
+        color: #333 !important;
+        transition: background 0.5s ease;
+    }
+    .main-title { 
+        color: #4a148c; 
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
     .card { 
         background-color: #fff; 
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
         border-radius: 12px; 
         padding: 20px; 
         transition: transform 0.3s ease; 
     }
     .card:hover { 
         transform: scale(1.03); 
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     }
     </style>
 """
 
 dark_css = """
     <style>
-    section[data-testid="stAppViewContainer"] {
-        background-color: #121212 !important;
-        color: #e0e0e0 !important;
+    @keyframes bg-gradient-dark {
+        0% {background-position: 0% 50%;}
+        50% {background-position: 100% 50%;}
+        100% {background-position: 0% 50%;}
     }
-    .main-title { color: #bb86fc; }
+
+    section[data-testid="stAppViewContainer"] {
+        background: linear-gradient(-45deg, #2a2a72, #009ffd, #2a2a72, #009ffd);
+        background-size: 400% 400%;
+        animation: bg-gradient-dark 15s ease infinite;
+        color: #e0e0e0 !important;
+        transition: background 0.5s ease;
+    }
+    .main-title { 
+        color: #bb86fc; 
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
     .card { 
         background-color: #1f1f1f; 
-        box-shadow: 0 4px 8px rgba(255,255,255,0.05); 
+        box-shadow: 0 4px 12px rgba(255,255,255,0.05); 
         border-radius: 12px; 
         padding: 20px; 
         transition: transform 0.3s ease; 
     }
     .card:hover { 
         transform: scale(1.03); 
+        box-shadow: 0 8px 24px rgba(255,255,255,0.15);
     }
     </style>
 """
 
 st.markdown(dark_css if theme == "Dark" else light_css, unsafe_allow_html=True)
 
-# --- Animated Title ---
+# --- Static Title ---
 st.markdown("""
     <div style='text-align: center; padding-top: 20px;'>
-        <h1 class='main-title' style='font-size: 3em; animation: glow 1.5s ease-in-out infinite alternate;'>
-            📖 NextRead
-        </h1>
+        <h1 class='main-title'>📖 NextRead</h1>
     </div>
-    <style>
-    @keyframes glow {
-        from {
-            text-shadow: 0 0 10px #bb86fc;
-        }
-        to {
-            text-shadow: 0 0 20px #6200ee, 0 0 30px #bb86fc;
-        }
-    }
-    </style>
 """, unsafe_allow_html=True)
 
 # --- Search Feature ---
