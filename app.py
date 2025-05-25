@@ -3,7 +3,7 @@ import pandas as pd
 import random
 
 # --- Page Config ---
-st.set_page_config(page_title="NextRead", layout="wide")
+st.set_page_config(page_title="NextRead 📚", layout="wide")
 
 # --- Load Data ---
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
@@ -15,10 +15,15 @@ if "bookmarks" not in st.session_state:
 # --- CSS Styling ---
 css = """
 <style>
-/* Animated background */
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Quicksand', sans-serif;
+}
+
 section.main {
-    animation: gradient 15s ease infinite;
-    background: linear-gradient(-45deg, #ffd3b6, #c1f0f6, #fceabb, #ffb6b9);
+    animation: gradient 20s ease infinite;
+    background: linear-gradient(-45deg, #fceabb, #f8b500, #c1f0f6, #ffb6b9);
     background-size: 400% 400%;
 }
 
@@ -28,43 +33,53 @@ section.main {
     100% {background-position: 0% 50%;}
 }
 
-/* Title */
 .main-title {
     color: #6a1b9a;
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
-    margin-top: 30px;
-    margin-bottom: 40px;
+    margin: 20px 0;
     text-shadow: 2px 2px 4px #ccc;
 }
 
-/* Card styles */
 .card {
-    background-color: #ffffffcc;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
     padding: 20px;
-    margin-bottom: 25px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: 0.4s ease;
+    margin: 10px;
 }
 .card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
 }
 
 .bookmark-btn {
-    background-color: #6a1b9a;
+    background: linear-gradient(to right, #8e2de2, #4a00e0);
     color: white;
-    padding: 7px 12px;
-    border-radius: 5px;
+    padding: 8px 15px;
+    border-radius: 8px;
     border: none;
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 12px;
     font-weight: bold;
 }
 .bookmark-btn:hover {
-    background-color: #4a148c;
+    background: linear-gradient(to right, #4a00e0, #8e2de2);
+    transform: scale(1.02);
+}
+
+input[type="text"] {
+    border-radius: 8px !important;
+    padding: 8px;
+}
+
+hr {
+    border: none;
+    height: 2px;
+    background: #ddd;
+    margin: 30px 0;
 }
 </style>
 """
@@ -84,51 +99,54 @@ def get_rating_by_title(book_title):
 
 # --- Display Book Cards ---
 def display_books(books):
+    cols = st.columns(2)
     for i, row in books.iterrows():
-        book_id = f"{row['title']}|{row['authors']}"
-        is_bookmarked = book_id in st.session_state.bookmarks
-        bookmark_text = "🔖 Remove Bookmark" if is_bookmarked else "⭐ Bookmark"
-        st.markdown(f"""
-            <div class='card'>
-                <strong>📖 {row['title']}</strong><br>
-                ✍️ Author: {row['authors']}<br>
-                ⭐ Average Rating: {row['average_ratings']}
-            </div>
-        """, unsafe_allow_html=True)
-        if st.button(bookmark_text, key=book_id):
-            if is_bookmarked:
-                st.session_state.bookmarks.remove(book_id)
-            else:
-                st.session_state.bookmarks.append(book_id)
-            st.experimental_rerun()
+        col = cols[i % 2]
+        with col:
+            book_id = f"{row['title']}|{row['authors']}"
+            is_bookmarked = book_id in st.session_state.bookmarks
+            bookmark_text = "🔖 Remove Bookmark" if is_bookmarked else "⭐ Bookmark"
+            st.markdown(f"""
+                <div class='card'>
+                    <strong>📖 {row['title']}</strong><br>
+                    ✍️ <b>Author:</b> {row['authors']}<br>
+                    ⭐ <b>Average Rating:</b> {row['average_ratings']}
+                </div>
+            """, unsafe_allow_html=True)
+            if st.button(bookmark_text, key=book_id):
+                if is_bookmarked:
+                    st.session_state.bookmarks.remove(book_id)
+                else:
+                    st.session_state.bookmarks.append(book_id)
+                st.experimental_rerun()
 
 # --- Search Feature ---
-search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True)
+search_type = st.radio("🔍 Search by:", ['authors', 'title'], horizontal=True)
 
 if search_type == 'authors':
-    author = st.text_input("Enter author name:")
+    author = st.text_input("Type author name here:")
     if author:
-        with st.spinner('🔍 Searching books by author...'):
+        with st.spinner('🔎 Finding books by that author...'):
             books = get_books_by_author(author)
         if books is not None:
-            st.markdown("### 📘 Books by Author:")
+            st.markdown("### ✨ Books by Author")
             display_books(books)
         else:
-            st.warning(f"No books found for '{author}'.")
+            st.warning(f"❌ No books found for **{author}**.")
 
 elif search_type == 'title':
-    title = st.text_input("Enter book title:")
+    title = st.text_input("Type book title here:")
     if title:
-        with st.spinner('🔍 Searching books by title...'):
+        with st.spinner('🔎 Searching for that book...'):
             books = get_rating_by_title(title)
         if books is not None:
-            st.markdown("### 📘 Matching Book(s):")
+            st.markdown("### ✨ Matching Book(s)")
             display_books(books)
         else:
-            st.warning(f"No books found with title '{title}'.")
+            st.warning(f"❌ No books found with title **{title}**.")
 
-# --- Surprise Me ---
-st.markdown("---")
+# --- Surprise Me Feature ---
+st.markdown("<hr>", unsafe_allow_html=True)
 if st.button("🎲 Surprise Me!"):
     random_book = df.sample(1).iloc[0]
     book_id = f"{random_book['title']}|{random_book['authors']}"
@@ -137,8 +155,8 @@ if st.button("🎲 Surprise Me!"):
     st.markdown(f"""
         <div class='card'>
             <strong>📖 {random_book['title']}</strong><br>
-            ✍️ Author: {random_book['authors']}<br>
-            ⭐ Average Rating: {random_book['average_ratings']}
+            ✍️ <b>Author:</b> {random_book['authors']}<br>
+            ⭐ <b>Average Rating:</b> {random_book['average_ratings']}
         </div>
     """, unsafe_allow_html=True)
     if st.button(bookmark_text, key="surprise_" + book_id):
@@ -150,7 +168,7 @@ if st.button("🎲 Surprise Me!"):
 
 # --- Bookmarks Section ---
 if st.session_state.bookmarks:
-    st.markdown("---")
+    st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("### 🔖 Your Bookmarks")
     for bm in st.session_state.bookmarks:
         title, author = bm.split("|")
@@ -158,7 +176,7 @@ if st.session_state.bookmarks:
         st.markdown(f"""
             <div class='card'>
                 <strong>📖 {bm_data['title']}</strong><br>
-                ✍️ Author: {bm_data['authors']}<br>
-                ⭐ Average Rating: {bm_data['average_ratings']}
+                ✍️ <b>Author:</b> {bm_data['authors']}<br>
+                ⭐ <b>Average Rating:</b> {bm_data['average_ratings']}
             </div>
         """, unsafe_allow_html=True)
