@@ -12,34 +12,43 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling with Fade-In & Ripple Effect ---
+# --- CSS Styling ---
 css = """
 <style>
-/* Animated background */
+/* Starry Night Flicker Background */
 section.main {
-    animation: gradient 15s ease infinite;
-    background: linear-gradient(-45deg, #4facfe, #00f2fe, #fbc1cc, #f8b500);
-    background-size: 400% 400%;
+  background: #0a0a23;
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes gradient {
-    0% {background-position: 0% 50%;}
-    50% {background-position: 100% 50%;}
-    100% {background-position: 0% 50%;}
+section.main::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: transparent url("https://www.transparenttextures.com/patterns/stardust.png") repeat;
+  animation: twinkle 5s infinite alternate;
+  opacity: 0.2;
+  z-index: 0;
+}
+
+@keyframes twinkle {
+  0%, 100% {opacity: 0.2;}
+  50% {opacity: 0.5;}
 }
 
 /* Title */
 .main-title {
-    color: #6a1b9a;
+    color: #d1c4e9;
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
     margin-bottom: 40px;
-    text-shadow: 2px 2px 4px #ccc;
+    text-shadow: 2px 2px 5px #311b92;
 }
 
-/* Card styles with fade-in */
+/* Card styles */
 .card {
     background-color: #ffffffcc;
     box-shadow: 0 6px 15px rgba(0,0,0,0.1);
@@ -47,24 +56,17 @@ section.main {
     padding: 20px;
     margin-bottom: 25px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    animation: fadeIn 0.7s forwards;
-    opacity: 0;
+    position: relative;
+    z-index: 1;
 }
-
 .card:hover {
     transform: scale(1.03);
     box-shadow: 0 10px 25px rgba(0,0,0,0.15);
 }
 
-@keyframes fadeIn {
-    to {
-        opacity: 1;
-    }
-}
-
-/* Bookmark button with ripple effect */
+/* Bookmark Button */
 .bookmark-btn {
-    background-color: #6a1b9a;
+    background-color: #311b92;
     color: white;
     padding: 7px 12px;
     border-radius: 5px;
@@ -72,32 +74,12 @@ section.main {
     cursor: pointer;
     margin-top: 10px;
     font-weight: bold;
+    transition: background-color 0.3s ease;
     position: relative;
-    overflow: hidden;
+    z-index: 1;
 }
-
-.bookmark-btn:focus:not(:active)::after {
-    content: "";
-    position: absolute;
-    border-radius: 50%;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    animation: ripple 0.6s linear;
-    background: rgba(255, 255, 255, 0.3);
-}
-
-@keyframes ripple {
-    0% {
-        transform: scale(0);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(2.5);
-        opacity: 0;
-    }
+.bookmark-btn:hover {
+    background-color: #512da8;
 }
 </style>
 """
@@ -128,7 +110,7 @@ def display_books(books):
                 ⭐ Average Rating: {row['average_ratings']}
             </div>
         """, unsafe_allow_html=True)
-        if st.button(bookmark_text, key=book_id, help="Click to toggle bookmark", args=None, kwargs=None, type="secondary", use_container_width=False):
+        if st.button(bookmark_text, key=book_id):
             if is_bookmarked:
                 st.session_state.bookmarks.remove(book_id)
             else:
