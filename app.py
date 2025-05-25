@@ -1,26 +1,29 @@
 import streamlit as st
 import pandas as pd
 
-# --- Page config ---
 st.set_page_config(page_title="NextRead", layout="wide")
 
-# --- Load data ---
-df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
+# Sample data (replace with your CSV load)
+df = pd.DataFrame({
+    "title": ["Book One", "Book Two", "Book Three"],
+    "author": ["Author A", "Author B", "Author C"],
+    "year": [2021, 2020, 2019]
+})
 
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- Inject CSS + JS for starry night flicker and dark background only ---
+# Inject CSS + JS for starry night flicker background
 st.markdown(
     """
     <style>
-    /* Dark night solid background */
+    /* Dark night background */
     body, .main, section.main {
         background-color: #0a0a23 !important;
         color: #ddd !important;
     }
 
-    /* Starry background container fixed and full screen */
+    /* Starry background container */
     #starry-night {
       pointer-events: none;
       position: fixed;
@@ -31,7 +34,7 @@ st.markdown(
       overflow: hidden;
     }
 
-    /* Star styles */
+    /* Stars */
     #starry-night .star {
       position: absolute;
       background: white;
@@ -64,13 +67,16 @@ st.markdown(
       100% { opacity: 0.3; transform: scale(1); }
     }
 
-    /* App container above stars */
+    /* Ensure app content is above stars */
     .app-container {
       position: relative;
       z-index: 10;
+      padding: 20px;
+      max-width: 900px;
+      margin: 0 auto;
     }
 
-    /* Title styling */
+    /* Title style */
     .main-title {
         color: #d1c4e9;
         font-size: 3.2em;
@@ -81,7 +87,7 @@ st.markdown(
         text-shadow: 2px 2px 5px #311b92;
     }
 
-    /* Card styling */
+    /* Book card style */
     .card {
         background-color: #ffffffcc;
         box-shadow: 0 6px 15px rgba(0,0,0,0.1);
@@ -94,36 +100,17 @@ st.markdown(
         transform: scale(1.03);
         box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     }
-
-    /* Bookmark button */
-    .bookmark-btn {
-        background-color: #311b92;
-        color: white;
-        padding: 7px 12px;
-        border-radius: 5px;
-        border: none;
-        cursor: pointer;
-        margin-top: 10px;
-        font-weight: bold;
-        transition: background-color 0.3s ease;
-    }
-    .bookmark-btn:hover {
-        background-color: #512da8;
-    }
     </style>
 
     <!-- Star container -->
     <div id="starry-night"></div>
 
     <script>
-    // Wait for the DOM content to load
     window.addEventListener('load', function() {
       const starry = document.getElementById("starry-night");
-      // Remove existing stars if any
       while (starry.firstChild) {
           starry.removeChild(starry.firstChild);
       }
-      // Create 100 stars
       for(let i=0; i<100; i++) {
         const star = document.createElement("div");
         star.classList.add("star");
@@ -142,7 +129,17 @@ st.markdown('<div class="app-container">', unsafe_allow_html=True)
 
 st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
 
-# --- Your search/book display code here ---
-# (You can reuse your previous logic below)
+# Show sample books as cards
+for i, row in df.iterrows():
+    st.markdown(
+        f"""
+        <div class="card">
+            <h3>{row['title']}</h3>
+            <p><b>Author:</b> {row['author']}</p>
+            <p><b>Year:</b> {row['year']}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 st.markdown('</div>', unsafe_allow_html=True)
