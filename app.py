@@ -2,22 +2,21 @@ import streamlit as st
 import pandas as pd
 
 # Load the dataset
-df = pd.read_csv('required.csv', header=0) 
-print(df.columns)
+df = pd.read_csv('required.csv')
 
 # Function to get books by author
 def get_books_by_author(author_name):
-    matching_books = df[df['Authors'].str.lower().str.contains(author_name.lower())]
+    matching_books = df[df['authors'].str.lower().str.contains(author_name.lower())]
     if not matching_books.empty:
-        return matching_books[['Title', 'Authors', 'Average Rating']]
+        return matching_books[['title', 'average_ratings']]
     else:
         return None
 
 # Function to get books by title
 def get_rating_by_title(book_title):
-    matching_books = df[df['Title'].str.lower().str.contains(book_title.lower())]
+    matching_books = df[df['title'].str.lower().str.contains(book_title.lower())]
     if not matching_books.empty:
-        return matching_books[['Title', 'Authors', 'Average Rating']]
+        return matching_books[['title', 'authors', 'average_ratings']]
     else:
         return None
 
@@ -32,7 +31,7 @@ if search_option == 'authors':
         results = get_books_by_author(author_input)
         if results is not None:
             st.write(f"Books by '{author_input}':")
-            st.dataframe(results)
+            st.dataframe(results, use_container_width=True)
         else:
             st.warning(f"No books found for author '{author_input}'.")
 
@@ -42,6 +41,6 @@ elif search_option == 'title':
         results = get_rating_by_title(title_input)
         if results is not None:
             st.write(f"Book(s) matching '{title_input}':")
-            st.dataframe(results)
+            st.dataframe(results, use_container_width=True)
         else:
             st.warning(f"No books found with title '{title_input}'.")
