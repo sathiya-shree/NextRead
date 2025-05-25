@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 
+# --- Page Config ---
+st.set_page_config(page_title="NextRead", layout="wide")
+
 # --- Load Data ---
 df = pd.read_csv("required.csv")
 
@@ -18,76 +21,75 @@ theme = st.selectbox("Choose Theme", ["Light", "Dark"])
 
 light_css = """
     <style>
-    @keyframes bg-gradient {
+    body {
+        background: linear-gradient(45deg, #ffe4e1, #e0f7fa, #fff9c4, #ffe4e1);
+        background-size: 400% 400%;
+        animation: bg-animation 15s ease infinite;
+        color: #000;
+    }
+    @keyframes bg-animation {
         0% {background-position: 0% 50%;}
         50% {background-position: 100% 50%;}
         100% {background-position: 0% 50%;}
     }
-
-    section[data-testid="stAppViewContainer"] {
-        background: linear-gradient(45deg, #ffe4e1, #e0f7fa, #fff9c4, #ffe4e1);
-        background-size: 400% 400%;
-        animation: bg-gradient 15s ease infinite;
-        color: #333 !important;
-    }
-    .main-title { 
-        color: #6a1b9a; 
-        font-weight: 700;
-        margin-bottom: 20px;
+    .main-title {
+        color: #6a1b9a;
         font-size: 3em;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 30px;
     }
-    .card { 
-        background-color: #fff; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-        border-radius: 15px; 
-        padding: 20px; 
-        transition: transform 0.3s ease; 
+    .card {
+        background-color: #ffffffcc;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-radius: 15px;
+        padding: 20px;
+        transition: transform 0.3s ease;
     }
-    .card:hover { 
-        transform: scale(1.05); 
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    .card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
     }
     </style>
 """
 
 dark_css = """
     <style>
-    @keyframes bg-gradient-dark {
+    body {
+        background: linear-gradient(45deg, #0f2027, #203a43, #2c5364);
+        background-size: 400% 400%;
+        animation: bg-animation-dark 15s ease infinite;
+        color: #fff;
+    }
+    @keyframes bg-animation-dark {
         0% {background-position: 0% 50%;}
         50% {background-position: 100% 50%;}
         100% {background-position: 0% 50%;}
     }
-
-    section[data-testid="stAppViewContainer"] {
-        background: linear-gradient(45deg, #0f2027, #203a43, #2c5364);
-        background-size: 400% 400%;
-        animation: bg-gradient-dark 15s ease infinite;
-        color: #e0e0e0 !important;
-    }
-    .main-title { 
-        color: #bb86fc; 
-        font-weight: 700;
-        margin-bottom: 20px;
+    .main-title {
+        color: #bb86fc;
         font-size: 3em;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 30px;
     }
-    .card { 
-        background-color: #1f1f1f; 
-        box-shadow: 0 4px 12px rgba(255,255,255,0.05); 
-        border-radius: 15px; 
-        padding: 20px; 
-        transition: transform 0.3s ease; 
+    .card {
+        background-color: #1e1e1ecc;
+        box-shadow: 0 4px 12px rgba(255,255,255,0.05);
+        border-radius: 15px;
+        padding: 20px;
+        transition: transform 0.3s ease;
     }
-    .card:hover { 
-        transform: scale(1.05); 
+    .card:hover {
+        transform: scale(1.05);
         box-shadow: 0 8px 24px rgba(255,255,255,0.15);
     }
     </style>
 """
 
-# --- Apply Theme ---
 st.markdown(dark_css if theme == "Dark" else light_css, unsafe_allow_html=True)
 
-# --- Title ---
+# --- App Title ---
 st.markdown("<h1 class='main-title'>NextRead 📚</h1>", unsafe_allow_html=True)
 
 # --- Search Feature ---
