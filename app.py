@@ -20,9 +20,8 @@ def get_rating_by_title(book_title):
 theme = st.selectbox("Choose Theme", ["Light", "Dark"])
 
 light_css = """
-  st.markdown("""
     <style>
-    /* This targets the main content area */
+    /* Light theme gradient background */
     section.main {
         background: linear-gradient(45deg, #ffe4e1, #e0f7fa, #fff9c4, #ffe4e1);
         background-size: 400% 400%;
@@ -30,7 +29,6 @@ light_css = """
         padding: 2rem;
     }
 
-    /* Optional: Customize the entire app container */
     div[data-testid="stAppViewContainer"] {
         background: linear-gradient(45deg, #ffe4e1, #e0f7fa, #fff9c4, #ffe4e1);
         background-size: 400% 400%;
@@ -64,10 +62,57 @@ light_css = """
         box-shadow: 0 8px 24px rgba(0,0,0,0.2);
     }
     </style>
-""", unsafe_allow_html=True)
-
 """
 
+dark_css = """
+    <style>
+    /* Dark theme gradient background */
+    section.main {
+        background: linear-gradient(45deg, #1a237e, #0d47a1, #1976d2, #1a237e);
+        background-size: 400% 400%;
+        animation: bg-animation-dark 15s ease infinite;
+        padding: 2rem;
+        color: #e0e0e0;
+    }
+
+    div[data-testid="stAppViewContainer"] {
+        background: linear-gradient(45deg, #1a237e, #0d47a1, #1976d2, #1a237e);
+        background-size: 400% 400%;
+        animation: bg-animation-dark 15s ease infinite;
+        color: #e0e0e0;
+    }
+
+    @keyframes bg-animation-dark {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .main-title {
+        color: #bb86fc;
+        font-size: 3em;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 30px;
+    }
+
+    .card {
+        background-color: #2c2c54cc;
+        box-shadow: 0 4px 12px rgba(255,255,255,0.1);
+        border-radius: 15px;
+        padding: 20px;
+        transition: transform 0.3s ease;
+        color: #e0e0e0;
+    }
+
+    .card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 24px rgba(255,255,255,0.3);
+    }
+    </style>
+"""
+
+# Apply selected theme CSS
 st.markdown(dark_css if theme == "Dark" else light_css, unsafe_allow_html=True)
 
 # --- App Title ---
