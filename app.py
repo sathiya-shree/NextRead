@@ -18,19 +18,41 @@ theme = st.selectbox("Choose Theme", ["Light", "Dark"])
 
 light_css = """
     <style>
-    body { background: #f9f9f9; color: #333; }
+    section[data-testid="stAppViewContainer"] {
+        background-color: #f9f9f9 !important;
+        color: #333 !important;
+    }
     .main-title { color: #4a148c; }
-    .card { background-color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 12px; padding: 20px; transition: transform 0.3s ease; }
-    .card:hover { transform: scale(1.03); }
+    .card { 
+        background-color: #fff; 
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        border-radius: 12px; 
+        padding: 20px; 
+        transition: transform 0.3s ease; 
+    }
+    .card:hover { 
+        transform: scale(1.03); 
+    }
     </style>
 """
 
 dark_css = """
     <style>
-    body { background: #121212; color: #e0e0e0; }
+    section[data-testid="stAppViewContainer"] {
+        background-color: #121212 !important;
+        color: #e0e0e0 !important;
+    }
     .main-title { color: #bb86fc; }
-    .card { background-color: #1f1f1f; box-shadow: 0 4px 8px rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; transition: transform 0.3s ease; }
-    .card:hover { transform: scale(1.03); }
+    .card { 
+        background-color: #1f1f1f; 
+        box-shadow: 0 4px 8px rgba(255,255,255,0.05); 
+        border-radius: 12px; 
+        padding: 20px; 
+        transition: transform 0.3s ease; 
+    }
+    .card:hover { 
+        transform: scale(1.03); 
+    }
     </style>
 """
 
@@ -39,8 +61,20 @@ st.markdown(dark_css if theme == "Dark" else light_css, unsafe_allow_html=True)
 # --- Animated Title ---
 st.markdown("""
     <div style='text-align: center; padding-top: 20px;'>
-        <h1 class='main-title' style='font-size: 3em;'>📖 NextRead</h1>
+        <h1 class='main-title' style='font-size: 3em; animation: glow 1.5s ease-in-out infinite alternate;'>
+            📖 NextRead
+        </h1>
     </div>
+    <style>
+    @keyframes glow {
+        from {
+            text-shadow: 0 0 10px #bb86fc;
+        }
+        to {
+            text-shadow: 0 0 20px #6200ee, 0 0 30px #bb86fc;
+        }
+    }
+    </style>
 """, unsafe_allow_html=True)
 
 # --- Search Feature ---
