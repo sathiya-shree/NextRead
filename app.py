@@ -12,15 +12,16 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Black background, no animation) ---
+# --- CSS Styling (with animation and effects) ---
 css = """
 <style>
 body {
     background-color: #000000;
     color: white;
+    font-family: 'Segoe UI', sans-serif;
 }
 
-/* Title */
+/* Animated Title */
 .main-title {
     color: #FFD700;
     font-size: 3.2em;
@@ -28,7 +29,18 @@ body {
     text-align: center;
     margin-top: 30px;
     margin-bottom: 40px;
-    text-shadow: 2px 2px 4px #333;
+    animation: glow 2s ease-in-out infinite alternate;
+    text-shadow: 0 0 5px #FFD700, 0 0 10px #FFA500, 0 0 20px #FF8C00;
+}
+
+/* Glow animation */
+@keyframes glow {
+    from {
+        text-shadow: 0 0 10px #FFD700, 0 0 20px #FFA500, 0 0 30px #FF8C00;
+    }
+    to {
+        text-shadow: 0 0 20px #FFA500, 0 0 30px #FF8C00, 0 0 40px #FF4500;
+    }
 }
 
 /* Card styles */
@@ -39,13 +51,21 @@ body {
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 25px;
+    animation: fadeIn 1s ease;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .card:hover {
     transform: scale(1.02);
-    box-shadow: 0 10px 25px rgba(255,255,255,0.1);
+    box-shadow: 0 10px 25px rgba(255,255,255,0.2);
 }
 
+/* Fade in effect */
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Bookmark button */
 .bookmark-btn {
     background-color: #FFD700;
     color: black;
@@ -55,9 +75,27 @@ body {
     cursor: pointer;
     margin-top: 10px;
     font-weight: bold;
+    box-shadow: 0 0 5px #FFD700;
+    transition: all 0.3s ease;
 }
 .bookmark-btn:hover {
     background-color: #daa520;
+    box-shadow: 0 0 15px #FFD700;
+}
+
+/* Divider animation */
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, #FFD700, #FF8C00, #FFD700);
+    animation: move 2s linear infinite;
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+@keyframes move {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
 }
 </style>
 """
@@ -121,7 +159,7 @@ elif search_type == 'title':
             st.warning(f"No books found with title '{title}'.")
 
 # --- Surprise Me ---
-st.markdown("---")
+st.markdown("<hr>", unsafe_allow_html=True)
 if st.button("🎲 Surprise Me!"):
     random_book = df.sample(1).iloc[0]
     book_id = f"{random_book['title']}|{random_book['authors']}"
@@ -143,7 +181,7 @@ if st.button("🎲 Surprise Me!"):
 
 # --- Bookmarks Section ---
 if st.session_state.bookmarks:
-    st.markdown("---")
+    st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("### 🔖 Your Bookmarks")
     for bm in st.session_state.bookmarks:
         title, author = bm.split("|")
