@@ -22,8 +22,8 @@ html, body, [class*="css"] {
 }
 
 section.main {
-    animation: gradient 20s ease infinite;
-    background: linear-gradient(-45deg, #fceabb, #f8b500, #c1f0f6, #ffb6b9);
+    animation: gradient 15s ease infinite;
+    background: linear-gradient(-45deg, #4facfe, #00f2fe, #fbc1cc, #f8b500);
     background-size: 400% 400%;
 }
 
