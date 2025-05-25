@@ -1,81 +1,89 @@
 import streamlit as st
 import pandas as pd
 
-# Custom CSS for styling, background, animations, and layout
+# Custom CSS for styling and animation
 st.markdown(
     """
     <style>
     @keyframes fadeIn {
-        0% {opacity: 0;}
-        100% {opacity: 1;}
+        0% {opacity: 0; transform: translateY(-10px);}
+        100% {opacity: 1; transform: translateY(0);}
     }
 
     .stApp {
-        background: linear-gradient(135deg, #e0f7fa, #fce4ec);
-        color: #333;
+        background: linear-gradient(to right, #e0c3fc, #8ec5fc);
         font-family: 'Segoe UI', sans-serif;
         animation: fadeIn 2s ease-in;
     }
 
-    .header-container {
+    .title-container {
         display: flex;
+        justify-content: center;
         align-items: center;
-        gap: 20px;
-        animation: fadeIn 2s ease-in;
-        margin-bottom: 30px;
+        flex-direction: column;
+        text-align: center;
+        animation: fadeIn 2s ease-in-out;
+        padding-top: 30px;
+        padding-bottom: 20px;
+    }
+
+    .main-title {
+        font-size: 48px;
+        font-weight: 900;
+        color: #4a148c;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px #ddd;
+        letter-spacing: 2px;
     }
 
     .logo {
         height: 60px;
-    }
-
-    .main-title {
-        font-size: 40px;
-        font-weight: 800;
-        color: #6a1b9a;
-        margin: 0;
+        margin-bottom: 10px;
     }
 
     .stRadio > div {
         flex-direction: row;
         justify-content: center;
     }
+
+    .stTextInput input {
+        border-radius: 8px;
+        padding: 10px;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Logo and main title
+# Centered title and logo (optional)
 st.markdown(
     """
-    <div class="header-container">
+    <div class="title-container">
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/HD_transparent_picture.png/600px-HD_transparent_picture.png" class="logo">
-        <h1 class="main-title">NextRead</h1>
+        <div class="main-title">NextRead</div>
     </div>
     """,
     unsafe_allow_html=True
 )
 
 # Load the dataset
-df = pd.read_csv('required.csv')
+df = pd.read_csv("required.csv")
 
 # Function to get books by author
 def get_books_by_author(author_name):
     matching_books = df[df['authors'].str.lower().str.contains(author_name.lower())]
     if not matching_books.empty:
         return matching_books[['title', 'average_ratings']]
-    else:
-        return None
+    return None
 
 # Function to get books by title
 def get_rating_by_title(book_title):
     matching_books = df[df['title'].str.lower().str.contains(book_title.lower())]
     if not matching_books.empty:
         return matching_books[['title', 'authors', 'average_ratings']]
-    else:
-        return None
+    return None
 
-# Search UI
+# Streamlit search UI
 search_option = st.radio("Search by:", ['authors', 'title'])
 
 if search_option == 'authors':
