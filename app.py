@@ -1,6 +1,33 @@
 import streamlit as st
 import pandas as pd
 
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #f0f2f6;
+    }
+    .stApp {
+        background: linear-gradient(135deg, #e0f7fa, #fce4ec);
+        color: #333;
+        font-family: 'Arial', sans-serif;
+    }
+    .stRadio > div {
+        flex-direction: row;
+    }
+    .title {
+        font-size: 36px;
+        font-weight: bold;
+        color: #6a1b9a;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
 # Load the dataset
 df = pd.read_csv('required.csv')
 
