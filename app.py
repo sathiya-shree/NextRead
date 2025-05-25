@@ -1,101 +1,82 @@
 import streamlit as st
 import pandas as pd
-import random
 
-# --- Page Setup ---
+# Set page config
 st.set_page_config(page_title="NextRead", layout="wide")
 
-# --- Load Data ---
+# Load data
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 
-# --- Bookmarks ---
-if "bookmarks" not in st.session_state:
-    st.session_state.bookmarks = []
-
-# --- Starry Night CSS with Moon & Shooting Stars ---
+# Inject starry night CSS
 st.markdown("""
 <style>
-/* Basic Reset */
-html, body, [class*="css"] {
-    background: black !important;
-    color: white !important;
+body {
+    background-color: black !important;
+    color: white;
 }
 
-/* Starry Sky */
-body::before {
-    content: '';
+.starry-bg {
     position: fixed;
-    width: 100%;
-    height: 100%;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     background: black;
-    z-index: -3;
+    overflow: hidden;
+    z-index: -1;
 }
 
-/* Twinkling Stars */
-@keyframes twinkle {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 0.2; }
-}
 .star {
-    position: fixed;
+    position: absolute;
     width: 2px;
     height: 2px;
     background: white;
+    border-radius: 50%;
     animation: twinkle 2s infinite;
-    z-index: -2;
 }
-""", unsafe_allow_html=True)
 
-# Add stars dynamically
-for _ in range(100):
-    top = random.randint(0, 100)
-    left = random.randint(0, 100)
-    st.markdown(f"""
-    <div class="star" style="top: {top}vh; left: {left}vw;"></div>
-    """, unsafe_allow_html=True)
+@keyframes twinkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
 
-# Add moon
-st.markdown("""
-<style>
 .moon {
-    position: fixed;
-    top: 50px;
-    right: 100px;
-    width: 100px;
-    height: 100px;
+    position: absolute;
+    top: 40px;
+    right: 60px;
+    width: 80px;
+    height: 80px;
     background: radial-gradient(circle at 30% 30%, #fdfcdc, #dcdcdc);
     border-radius: 50%;
     box-shadow: 0 0 60px #fdfcdc;
     z-index: -1;
 }
-</style>
-<div class="moon"></div>
-""", unsafe_allow_html=True)
 
-# Add shooting stars
-st.markdown("""
-<style>
-@keyframes shoot {
-  0% { transform: translateX(0) translateY(0); opacity: 1; }
-  100% { transform: translateX(-100vw) translateY(100vh); opacity: 0; }
-}
 .shooting-star {
-    position: fixed;
-    top: 10%;
-    left: 90%;
+    position: absolute;
+    top: 20%;
+    left: 80%;
     width: 2px;
     height: 100px;
     background: linear-gradient(white, transparent);
     transform: rotate(-45deg);
-    animation: shoot 3s infinite linear;
-    z-index: -2;
+    animation: shoot 4s infinite linear;
+}
+
+@keyframes shoot {
+    0% { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 1; }
+    100% { transform: translateX(-500px) translateY(500px) rotate(-45deg); opacity: 0; }
 }
 </style>
-<div class="shooting-star"></div>
-""", unsafe_allow_html=True)
 
-# --- Title ---
-st.markdown("<h1 style='text-align: center;'>📚 NextRead</h1>", unsafe_allow_html=True)
+<div class="starry-bg">
+    <div class="moon"></div>
+    <div class="shooting-star"></div>
+    """ +
+    "".join([f'<div class="star" style="top: {i*5 % 100}vh; left: {(i*11) % 100}vw;"></div>' for i in range(100)]) +
+    "</div>", unsafe_allow_html=True)
+
+
 
 # --- Helper Functions ---
 def get_books_by_author(author_name):
