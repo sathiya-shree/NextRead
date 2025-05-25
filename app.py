@@ -44,4 +44,3 @@ elif search_option == 'Book Title':
             st.dataframe(results)
         else:
             st.warning(f"No books found with title '{title_input}'.")
-
