@@ -1,29 +1,37 @@
 import streamlit as st
 import pandas as pd
 
+# --- Page config ---
 st.set_page_config(page_title="NextRead", layout="wide")
 
+# --- Load data ---
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
+# --- Inject CSS + JS for starry night flicker and dark background only ---
 st.markdown(
     """
     <style>
-    /* Full screen starry background container without gradient */
+    /* Dark night solid background */
+    body, .main, section.main {
+        background-color: #0a0a23 !important;
+        color: #ddd !important;
+    }
+
+    /* Starry background container fixed and full screen */
     #starry-night {
       pointer-events: none;
       position: fixed;
       top: 0; left: 0;
       width: 100vw;
       height: 100vh;
-      background: #0a0a23;  /* dark night blue solid background */
       z-index: 0;
       overflow: hidden;
     }
 
-    /* Create many white dots (stars) */
+    /* Star styles */
     #starry-night .star {
       position: absolute;
       background: white;
@@ -34,8 +42,6 @@ st.markdown(
       animation-direction: alternate;
       animation-timing-function: ease-in-out;
     }
-
-    /* Different star sizes and twinkle durations */
     #starry-night .star:nth-child(odd) {
       width: 2px;
       height: 2px;
@@ -58,7 +64,7 @@ st.markdown(
       100% { opacity: 0.3; transform: scale(1); }
     }
 
-    /* Make sure your app content is above the starry background */
+    /* App container above stars */
     .app-container {
       position: relative;
       z-index: 10;
@@ -106,20 +112,27 @@ st.markdown(
     }
     </style>
 
-    <!-- Starry background container -->
+    <!-- Star container -->
     <div id="starry-night"></div>
 
     <script>
-    // Create 100 stars randomly positioned
-    const starry = document.getElementById("starry-night");
-    for(let i=0; i<100; i++) {
-      const star = document.createElement("div");
-      star.classList.add("star");
-      star.style.top = Math.random() * 100 + "vh";
-      star.style.left = Math.random() * 100 + "vw";
-      star.style.animationDelay = (Math.random() * 3) + "s";
-      starry.appendChild(star);
-    }
+    // Wait for the DOM content to load
+    window.addEventListener('load', function() {
+      const starry = document.getElementById("starry-night");
+      // Remove existing stars if any
+      while (starry.firstChild) {
+          starry.removeChild(starry.firstChild);
+      }
+      // Create 100 stars
+      for(let i=0; i<100; i++) {
+        const star = document.createElement("div");
+        star.classList.add("star");
+        star.style.top = Math.random() * 100 + "vh";
+        star.style.left = Math.random() * 100 + "vw";
+        star.style.animationDelay = (Math.random() * 3) + "s";
+        starry.appendChild(star);
+      }
+    });
     </script>
     """,
     unsafe_allow_html=True,
@@ -127,10 +140,9 @@ st.markdown(
 
 st.markdown('<div class="app-container">', unsafe_allow_html=True)
 
-# Your Streamlit app content below
-
 st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
 
-# ... rest of your app logic and UI here ...
+# --- Your search/book display code here ---
+# (You can reuse your previous logic below)
 
 st.markdown('</div>', unsafe_allow_html=True)
