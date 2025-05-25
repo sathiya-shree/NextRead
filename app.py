@@ -5,9 +5,8 @@ import pandas as pd
 st.set_page_config(page_title="NextRead", layout="wide")
 
 # --- Load Data ---
-df = pd.read_csv("required.csv", error_bad_lines=False, warn_bad_lines=True)
-df = pd.read_csv("required.csv", on_bad_lines='skip')
-df = pd.read_csv("required.csv", encoding='utf-8')
+df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
+
 
 
 # --- Initialize bookmarks in session state ---
