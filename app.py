@@ -1,22 +1,21 @@
 import streamlit as st
 import pandas as pd
 
-# Load your dataset
-df = pd.read_csv('required.csv')  # Make sure this file is uploaded in Colab
+df = pd.read_csv('required.csv')
+print(df.columns.tolist())
 
 # Function to get books by author
 def get_books_by_author(author_name):
-    matching_books = df[df['authors'].str.lower().str.contains(author_name.lower())]
+    matching_books = df[df['Authors'].str.lower().str.contains(author_name.lower())]
     if not matching_books.empty:
-        return matching_books[['title', 'authors', 'average_ratings']]
+        return matching_books[['Title', 'Authors', 'Average rating']]
     else:
         return None
 
-# Function to get rating by book title
 def get_rating_by_title(book_title):
-    matching_books = df[df['title'].str.lower().str.contains(book_title.lower())]
+    matching_books = df[df['Title'].str.lower().str.contains(book_title.lower())]
     if not matching_books.empty:
-        return matching_books[['title', 'authors', 'average_ratings']]
+        return matching_books[['Title', 'Authors', 'Average rating']]
     else:
         return None
 
