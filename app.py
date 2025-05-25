@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # Load your dataset
-df = pd.read_csv('/content/required.csv')  # Make sure this file is uploaded in Colab
+df = pd.read_csv('required.csv')  # Make sure this file is uploaded in Colab
 
 # Function to get books by author
 def get_books_by_author(author_name):
