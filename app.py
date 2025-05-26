@@ -12,32 +12,31 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Dark mode, gradients, hide share overlay) ---
+# --- CSS Styling (Light shades background) ---
 css = """
 <style>
 /* Body & Background */
 body, .css-18e3th9 {
-    background: linear-gradient(135deg, #1f1f2e, #121212);
-    color: white;
+    background: linear-gradient(135deg, #f9f9f9, #e6e6e6);
+    color: #222222;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Title without glow */
+/* Title */
 .main-title {
-    color: #FFD700;  /* Gold */
+    color: #3a3a3a;  /* Dark gray */
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
     margin-bottom: 20px;
-    text-shadow: none;
 }
 
 /* Card styles */
 .card {
-    background-color: #292933;
-    color: white;
-    box-shadow: 0 6px 15px rgba(255,255,255,0.05);
+    background-color: #ffffff;
+    color: #222222;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 25px;
@@ -46,7 +45,7 @@ body, .css-18e3th9 {
 }
 .card:hover {
     transform: scale(1.02);
-    box-shadow: 0 10px 25px rgba(255,255,255,0.15);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
 }
 
 /* Fade in effect */
@@ -57,27 +56,27 @@ body, .css-18e3th9 {
 
 /* Bookmark button */
 .bookmark-btn {
-    background-color: #FFD700;
-    color: black;
+    background-color: #3a3a3a;
+    color: #f9f9f9;
     padding: 7px 12px;
     border-radius: 5px;
     border: none;
     cursor: pointer;
     margin-top: 10px;
     font-weight: bold;
-    box-shadow: 0 0 5px #FFD700;
+    box-shadow: 0 0 5px #444444;
     transition: all 0.3s ease;
 }
 .bookmark-btn:hover {
-    background-color: #daa520;
-    box-shadow: 0 0 15px #FFD700;
+    background-color: #555555;
+    box-shadow: 0 0 15px #666666;
 }
 
 /* Divider */
 hr {
     border: none;
     height: 2px;
-    background: linear-gradient(90deg, #FFD700, #FF8C00, #FFD700);
+    background: linear-gradient(90deg, #888888, #cccccc, #888888);
     margin-top: 40px;
     margin-bottom: 40px;
 }
@@ -87,27 +86,16 @@ hr {
 .stRadio > div > label, 
 .stRadio > div > input,
 .stButton > button {
-    background-color: #292933 !important;
-    color: white !important;
+    background-color: #f0f0f0 !important;
+    color: #222222 !important;
     border-radius: 8px !important;
-    border: 1.5px solid #FFD700 !important;
-}
-
-/* Hide Streamlit share widget overlays */
-[aria-label="Share this app"], 
-div[title="Share this app"], 
-div[class*="share"], 
-button[class*="share"] {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+    border: 1.5px solid #cccccc !important;
 }
 
 /* Copyright footer */
 .footer {
     text-align: center;
-    color: #888;
+    color: #666666;
     font-size: 0.85em;
     margin: 40px 0 10px 0;
 }
