@@ -7,8 +7,8 @@ st.set_page_config(page_title="NextRead", layout="wide", page_icon="📚")
 
 # --- Load Data ---
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
-df = df[['title', 'authors', 'genres', 'average_ratings']]
-df.dropna(subset=['title', 'authors', 'genres', 'average_ratings'], inplace=True)
+df = df[['title', 'authors', 'genre', 'average_ratings']]
+df.dropna(subset=['title', 'authors', 'genre', 'average_ratings'], inplace=True)
 
 # --- Shuffle the dataset to avoid fixed order ---
 df = df.sample(frac=1).reset_index(drop=True)
@@ -90,11 +90,11 @@ st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
 # --- Filter Functions ---
 def get_books_by_author(author_name):
     matches = df[df['authors'].str.lower().str.contains(author_name.lower(), na=False)]
-    return matches[['title', 'authors', 'genres', 'average_ratings']] if not matches.empty else None
+    return matches[['title', 'authors', 'genre', 'average_ratings']] if not matches.empty else None
 
 def get_rating_by_title(book_title):
     matches = df[df['title'].str.lower().str.contains(book_title.lower(), na=False)]
-    return matches[['title', 'authors', 'genres', 'average_ratings']] if not matches.empty else None
+    return matches[['title', 'authors', 'genre', 'average_ratings']] if not matches.empty else None
 
 # --- Display Function ---
 def display_books(books):
@@ -106,7 +106,7 @@ def display_books(books):
             <div class='card'>
                 <strong>📖 {row['title']}</strong><br>
                 ✍️ Author: {row['authors']}<br>
-                📚 Genre: {row['genres']}<br>
+                📚 Genre: {row['genre']}<br>
                 ⭐ Average Rating: {row['average_ratings']}
             </div>
         """, unsafe_allow_html=True)
@@ -159,7 +159,7 @@ if st.button("🎲 Surprise Me!"):
         <div class='card'>
             <strong>📖 {random_book['title']}</strong><br>
             ✍️ Author: {random_book['authors']}<br>
-            📚 Genre: {random_book['genres']}<br>
+            📚 Genre: {random_book['genre']}<br>
             ⭐ Average Rating: {random_book['average_ratings']}
         </div>
     """, unsafe_allow_html=True)
@@ -181,7 +181,7 @@ if st.session_state.bookmarks:
             <div class='card'>
                 <strong>📖 {bm_data['title']}</strong><br>
                 ✍️ Author: {bm_data['authors']}<br>
-                📚 Genre: {bm_data['genres']}<br>
+                📚 Genre: {bm_data['genre']}<br>
                 ⭐ Average Rating: {bm_data['average_ratings']}
             </div>
         """, unsafe_allow_html=True)
