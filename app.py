@@ -7,26 +7,25 @@ st.set_page_config(page_title="NextRead", layout="wide", page_icon="📚")
 
 # --- Load Data ---
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
+df = df[['title', 'authors', 'genres', 'average_ratings']]
+df.dropna(subset=['title', 'authors', 'genres', 'average_ratings'], inplace=True)
 
-# Add genre column if not available
-if "genres" not in df.columns:
-    df["genres"] = random.choices(
-        ["Fiction", "Romance", "Mystery", "Fantasy", "Science", "Young Adult", "Thriller", "Biography"],
-        k=len(df)
-    )
+# --- Shuffle the dataset to avoid fixed order ---
+df = df.sample(frac=1).reset_index(drop=True)
 
 # --- Initialize bookmarks ---
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling with Gradient Background ---
+# --- CSS Styling ---
 css = """
 <style>
 body {
-    background: linear-gradient(to right, #141E30, #243B55);
+    background: linear-gradient(135deg, #1e1e2f 0%, #121212 100%);
     color: white;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
 .main-title {
     color: #FFD700;
     font-size: 3.2em;
@@ -34,42 +33,46 @@ body {
     text-align: center;
     margin-top: 30px;
     margin-bottom: 40px;
-    animation: glow 2s infinite alternate;
+    text-shadow: none;
 }
-@keyframes glow {
-    from {
-        text-shadow: 0 0 10px #FFD700;
-    }
-    to {
-        text-shadow: 0 0 20px #FF8C00;
-    }
-}
+
 .card {
-    background: linear-gradient(145deg, #1f1f1f, #2e2e2e);
+    background: linear-gradient(145deg, #2a2a3b, #1a1a2f);
     color: white;
+    box-shadow: 0 6px 15px rgba(255,255,255,0.05);
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 25px;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     animation: fadeIn 1s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .card:hover {
     transform: scale(1.02);
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    box-shadow: 0 10px 25px rgba(255,255,255,0.15);
 }
+
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
 .bookmark-btn {
     background-color: #FFD700;
     color: black;
     padding: 7px 12px;
     border-radius: 5px;
-    font-weight: bold;
     border: none;
     cursor: pointer;
     margin-top: 10px;
+    font-weight: bold;
+    box-shadow: 0 0 5px #FFD700;
+    transition: all 0.3s ease;
 }
 .bookmark-btn:hover {
-    background-color: #e6c200;
+    background-color: #daa520;
+    box-shadow: 0 0 15px #FFD700;
 }
+
 hr {
     border: none;
     height: 2px;
@@ -84,7 +87,16 @@ st.markdown(css, unsafe_allow_html=True)
 # --- Title ---
 st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
 
-# --- Book Card Display ---
+# --- Filter Functions ---
+def get_books_by_author(author_name):
+    matches = df[df['authors'].str.lower().str.contains(author_name.lower(), na=False)]
+    return matches[['title', 'authors', 'genres', 'average_ratings']] if not matches.empty else None
+
+def get_rating_by_title(book_title):
+    matches = df[df['title'].str.lower().str.contains(book_title.lower(), na=False)]
+    return matches[['title', 'authors', 'genres', 'average_ratings']] if not matches.empty else None
+
+# --- Display Function ---
 def display_books(books):
     for _, row in books.iterrows():
         book_id = f"{row['title']}|{row['authors']}"
@@ -105,59 +117,71 @@ def display_books(books):
                 st.session_state.bookmarks.append(book_id)
             st.experimental_rerun()
 
-# --- Search Section ---
-search_type = st.radio("Search by:", ['Author', 'Title', 'Genre'], horizontal=True)
+# --- Reader's Picks ---
+st.markdown("### 🔥 Reader’s Picks")
+readers_picks = df.sample(5)
+display_books(readers_picks)
 
-if search_type == 'Author':
+# --- Search Section ---
+st.markdown("<hr>", unsafe_allow_html=True)
+search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True)
+
+if search_type == 'authors':
     author = st.text_input("Enter author name:")
     if author:
-        matches = df[df['authors'].str.lower().str.contains(author.lower())]
-        if not matches.empty:
+        with st.spinner('🔍 Searching books by author...'):
+            books = get_books_by_author(author)
+        if books is not None:
             st.markdown("### 📘 Books by Author:")
-            display_books(matches)
+            display_books(books)
         else:
-            st.warning("No books found for that author.")
+            st.warning(f"No books found for '{author}'.")
 
-elif search_type == 'Title':
+elif search_type == 'title':
     title = st.text_input("Enter book title:")
     if title:
-        matches = df[df['title'].str.lower().str.contains(title.lower())]
-        if not matches.empty:
-            st.markdown("### 📘 Matching Titles:")
-            display_books(matches)
+        with st.spinner('🔍 Searching books by title...'):
+            books = get_rating_by_title(title)
+        if books is not None:
+            st.markdown("### 📘 Matching Book(s):")
+            display_books(books)
         else:
-            st.warning("No books found with that title.")
-
-elif search_type == 'Genre':
-    genres = df['genres'].unique()
-    selected_genre = st.selectbox("Choose a genre:", genres)
-    filtered = df[df['genres'] == selected_genre]
-    st.markdown(f"### 📚 Books in {selected_genre} Genre")
-    display_books(filtered)
+            st.warning(f"No books found with title '{title}'.")
 
 # --- Surprise Me ---
 st.markdown("<hr>", unsafe_allow_html=True)
 if st.button("🎲 Surprise Me!"):
     random_book = df.sample(1).iloc[0]
-    display_books(pd.DataFrame([random_book]))
+    book_id = f"{random_book['title']}|{random_book['authors']}"
+    is_bookmarked = book_id in st.session_state.bookmarks
+    bookmark_text = "🔖 Remove Bookmark" if is_bookmarked else "⭐ Bookmark"
+    st.markdown(f"""
+        <div class='card'>
+            <strong>📖 {random_book['title']}</strong><br>
+            ✍️ Author: {random_book['authors']}<br>
+            📚 Genre: {random_book['genres']}<br>
+            ⭐ Average Rating: {random_book['average_ratings']}
+        </div>
+    """, unsafe_allow_html=True)
+    if st.button(bookmark_text, key="surprise_" + book_id):
+        if is_bookmarked:
+            st.session_state.bookmarks.remove(book_id)
+        else:
+            st.session_state.bookmarks.append(book_id)
+        st.experimental_rerun()
 
-# --- Top Rated ---
-top_books = df.sort_values(by='average_ratings', ascending=False).head(5)
-st.markdown("<hr>", unsafe_allow_html=True)
-st.markdown("### 🏆 Top Rated Books")
-display_books(top_books)
-
-# --- New Arrivals (Random subset) ---
-new_arrivals = df.sample(5)
-st.markdown("### 🌟 New Arrivals")
-display_books(new_arrivals)
-
-# --- Bookmarks ---
+# --- Bookmarks Section ---
 if st.session_state.bookmarks:
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("### 🔖 Your Bookmarks")
     for bm in st.session_state.bookmarks:
         title, author = bm.split("|")
-        result = df[(df['title'] == title) & (df['authors'] == author)]
-        if not result.empty:
-            display_books(result)
+        bm_data = df[(df['title'] == title) & (df['authors'] == author)].iloc[0]
+        st.markdown(f"""
+            <div class='card'>
+                <strong>📖 {bm_data['title']}</strong><br>
+                ✍️ Author: {bm_data['authors']}<br>
+                📚 Genre: {bm_data['genres']}<br>
+                ⭐ Average Rating: {bm_data['average_ratings']}
+            </div>
+        """, unsafe_allow_html=True)
