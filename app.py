@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import random
 
-# Set up Streamlit page
+# Set page config
 st.set_page_config(page_title="NextRead", layout="wide", page_icon="📚")
 
 # Load dataset
@@ -14,7 +14,7 @@ df = df.sample(frac=1).reset_index(drop=True)
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# CSS for background and layout
+# CSS Styling
 css = """
 <style>
 body {
@@ -80,7 +80,7 @@ elif search_type == 'title':
     title = st.text_input("Enter book title:")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Helper functions
+# Helper function to show book cards
 def display_books(book_data):
     for _, row in book_data.iterrows():
         with st.container():
@@ -92,36 +92,39 @@ def display_books(book_data):
                 <p><strong>⭐ Average Rating:</strong> {row['average_ratings']}</p>
                 </div>
             """, unsafe_allow_html=True)
-
             if st.button("🔖 Bookmark", key=f"bookmark_{row['title']}"):
                 st.session_state.bookmarks.append(row)
 
-def get_books_by_author(author_name):
-    return df[df['authors'].str.lower().str.contains(author_name.lower(), na=False)]
-
-def get_books_by_title(title_name):
-    return df[df['title'].str.lower().str.contains(title_name.lower(), na=False)]
-
-# Search Results
+# Search results
 if search_type == 'authors' and author:
-    results = get_books_by_author(author)
+    results = df[df['authors'].str.lower().str.contains(author.lower(), na=False)]
     if not results.empty:
         st.markdown("### 📘 Books by Author:")
         display_books(results)
     else:
         st.warning(f"No books found for '{author}'.")
 
-if search_type == 'title' and title:
-    results = get_books_by_title(title)
+elif search_type == 'title' and title:
+    results = df[df['title'].str.lower().str.contains(title.lower(), na=False)]
     if not results.empty:
         st.markdown("### 📘 Books by Title:")
         display_books(results)
     else:
         st.warning(f"No books found for '{title}'.")
 
+# Reader’s Picks section
+st.markdown("## 🌟 Reader’s Picks")
+random_picks = df.sample(min(5, len(df)))
+display_books(random_picks)
+
+# New Arrivals section
+st.markdown("## 🆕 New Arrivals")
+new_arrivals = df.tail(min(5, len(df)))
+display_books(new_arrivals)
+
 # Bookmarks section
 if st.session_state.bookmarks:
-    st.markdown("### 🔖 Bookmarked Books")
+    st.markdown("## 🔖 Bookmarked Books")
     for book in st.session_state.bookmarks:
         st.markdown(f"""
             <div class="card">
