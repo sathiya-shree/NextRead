@@ -1,7 +1,7 @@
 import streamlit as st
 
 # --- Set Page Config ---
-st.set_page_config(page_title="Book Finder App", layout="wide")
+st.set_page_config(page_title="Next Read", layout="wide")
 
 # --- Apply Custom Pastel Styling ---
 st.markdown("""
