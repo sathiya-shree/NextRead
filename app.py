@@ -2,83 +2,85 @@ import streamlit as st
 import pandas as pd
 import random
 
-# --- Page Config ---
 st.set_page_config(page_title="NextRead", layout="wide", page_icon="📚")
 
-# --- Load Data ---
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 
-# --- Initialize bookmarks ---
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Dark mode, no glow on title) ---
+# --- Enhanced CSS ---
 css = """
 <style>
 body {
-    background-color: #121212;
+    background: linear-gradient(135deg, #1e1e2f, #121212);
     color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', sans-serif;
 }
 
-/* Title without glow */
 .main-title {
-    color: #FFD700;  /* Gold color */
-    font-size: 3.2em;
+    color: #ffdd57;
+    font-size: 3.5em;
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
     margin-bottom: 40px;
-    text-shadow: none;
+    animation: fadeIn 1s ease;
 }
 
 /* Card styles */
 .card {
-    background-color: #1f1f1f;
-    color: white;
-    box-shadow: 0 6px 15px rgba(255,255,255,0.05);
-    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
     padding: 20px;
     margin-bottom: 25px;
-    animation: fadeIn 1s ease;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(10px);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 .card:hover {
     transform: scale(1.02);
-    box-shadow: 0 10px 25px rgba(255,255,255,0.15);
+    box-shadow: 0 15px 30px rgba(255, 215, 0, 0.2);
 }
 
-/* Fade in effect */
-@keyframes fadeIn {
-    0% { opacity: 0; transform: translateY(10px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-
-/* Bookmark button */
-.bookmark-btn {
-    background-color: #FFD700;
-    color: black;
-    padding: 7px 12px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    margin-top: 10px;
+/* Buttons */
+button[kind="primary"] {
+    background: linear-gradient(to right, #FFD700, #FF8C00);
+    color: black !important;
     font-weight: bold;
-    box-shadow: 0 0 5px #FFD700;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
     transition: all 0.3s ease;
+    box-shadow: 0 0 8px #ffd700;
 }
-.bookmark-btn:hover {
-    background-color: #daa520;
-    box-shadow: 0 0 15px #FFD700;
+button[kind="primary"]:hover {
+    background: linear-gradient(to right, #FF8C00, #FFD700);
+    box-shadow: 0 0 15px #ffd700;
+    transform: scale(1.05);
 }
 
 /* Divider */
 hr {
     border: none;
-    height: 2px;
+    height: 3px;
     background: linear-gradient(90deg, #FFD700, #FF8C00, #FFD700);
-    margin-top: 40px;
+    border-radius: 3px;
+    margin-top: 50px;
     margin-bottom: 40px;
+    animation: pulseLine 4s infinite;
+}
+
+@keyframes pulseLine {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
 """
