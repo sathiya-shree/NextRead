@@ -12,12 +12,19 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Dark gradient bg, visible text, styled inputs) ---
+# --- CSS Styling (Dark gradient bg, styled inputs, cards, etc.) ---
 css = """
 <style>
-/* Background gradient for entire page */
-body, .css-18e3th9 {
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+/* Background gradient for the whole app */
+[data-testid="stAppViewContainer"], 
+[data-testid="stToolbar"], 
+[data-testid="stSidebar"] {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364) !important;
+    color: white;
+}
+
+/* Body text color */
+body {
     color: white;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -29,29 +36,8 @@ body, .css-18e3th9 {
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
     text-shadow: none;
-}
-
-/* Search bar container to center */
-.search-container {
-    max-width: 600px;
-    margin: 0 auto 40px auto;
-}
-
-/* Style Streamlit text input */
-.css-1offfwp, .css-1v0mbdj, input[type="text"] {
-    background-color: #1f1f1f !important;
-    color: white !important;
-    border-radius: 8px !important;
-    border: 1.5px solid #FFD700 !important;
-    padding: 10px !important;
-}
-
-/* Override Streamlit labels color */
-.css-1v0mbdj label, label {
-    color: white !important;
-    font-weight: 600;
 }
 
 /* Card styles */
@@ -64,13 +50,10 @@ body, .css-18e3th9 {
     margin-bottom: 25px;
     animation: fadeIn 1s ease;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    max-width: 700px;
-    margin-left: auto;
-    margin-right: auto;
 }
 .card:hover {
     transform: scale(1.02);
-    box-shadow: 0 10px 25px rgba(255,215,0,0.3);
+    box-shadow: 0 10px 25px rgba(255,255,255,0.15);
 }
 
 /* Fade in effect */
@@ -106,31 +89,36 @@ hr {
     margin-bottom: 40px;
 }
 
-/* Radio buttons text color */
-.css-1hynsf2 label {
+/* Input text and container */
+.css-1v0mbdj, /* container for input */
+.css-1d391kg, /* wrapper container for text input */
+.css-18ni7ap, /* input box container */
+.stTextInput > div > input {
+    background-color: #1f1f1f !important;
     color: white !important;
-    font-weight: 600;
+    border-radius: 8px !important;
+    border: 1px solid #FFD700 !important;
 }
 
-/* Radio buttons container background transparent */
-.css-1hynsf2 {
+/* Parent container background transparent */
+.css-1d391kg, .css-1v0mbdj {
     background-color: transparent !important;
 }
 
-/* Streamlit buttons style */
-.stButton > button {
-    background-color: #FFD700 !important;
-    color: black !important;
-    font-weight: bold !important;
-    border-radius: 6px !important;
-    border: none !important;
-    padding: 8px 18px !important;
-    box-shadow: 0 0 8px #FFD700 !important;
-    transition: all 0.3s ease !important;
+/* Radio buttons text color */
+.stRadio label, .stRadio div {
+    color: white !important;
 }
-.stButton > button:hover {
-    background-color: #daa520 !important;
-    box-shadow: 0 0 15px #FFD700 !important;
+
+/* Search bar label */
+label[for="authors"], label[for="title"] {
+    color: white;
+}
+
+/* Scrollbar for bookmarks if needed */
+.stMarkdown {
+    max-height: 400px;
+    overflow-y: auto;
 }
 </style>
 """
@@ -138,14 +126,6 @@ st.markdown(css, unsafe_allow_html=True)
 
 # --- App Title ---
 st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
-
-# --- Search Bar ---
-with st.container():
-    search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True, index=0)
-    if search_type == 'authors':
-        search_input = st.text_input("Enter author name:")
-    else:
-        search_input = st.text_input("Enter book title:")
 
 # --- Book Filter Functions ---
 def get_books_by_author(author_name):
@@ -177,24 +157,30 @@ def display_books(books):
                 st.session_state.bookmarks.append(book_id)
             st.experimental_rerun()
 
-# --- Show Results or Warnings ---
-if search_input:
-    if search_type == 'authors':
+# --- Search Feature ---
+search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True)
+
+if search_type == 'authors':
+    author = st.text_input("Enter author name:")
+    if author:
         with st.spinner('🔍 Searching books by author...'):
-            books = get_books_by_author(search_input)
+            books = get_books_by_author(author)
         if books is not None:
             st.markdown("### 📘 Books by Author:")
             display_books(books)
         else:
-            st.warning(f"No books found for '{search_input}'.")
-    else:
+            st.warning(f"No books found for '{author}'.")
+
+elif search_type == 'title':
+    title = st.text_input("Enter book title:")
+    if title:
         with st.spinner('🔍 Searching books by title...'):
-            books = get_rating_by_title(search_input)
+            books = get_rating_by_title(title)
         if books is not None:
             st.markdown("### 📘 Matching Book(s):")
             display_books(books)
         else:
-            st.warning(f"No books found with title '{search_input}'.")
+            st.warning(f"No books found with title '{title}'.")
 
 # --- Surprise Me ---
 st.markdown("<hr>", unsafe_allow_html=True)
