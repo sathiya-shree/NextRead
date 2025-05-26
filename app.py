@@ -12,40 +12,47 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Pastel theme) ---
+# --- CSS Styling with Pastel Gradient Background ---
 css = """
 <style>
-/* Body & Background */
-body, .css-18e3th9 {
-    background: linear-gradient(135deg, #ffecd2, #fcb69f);
-    color: #444444;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* Override Streamlit main container background */
+.css-18e3th9 {
+    background: linear-gradient(135deg, #ffecd2, #fcb69f) !important;
+    min-height: 100vh;
 }
 
-/* Title */
+/* Override body background */
+body {
+    background: linear-gradient(135deg, #ffecd2, #fcb69f) !important;
+}
+
+/* Title without glow */
 .main-title {
-    color: #7f5a83;  /* Muted pastel purple */
+    color: #5a3e36;  /* soft brown */
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+    text-shadow: none;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Card styles */
 .card {
-    background-color: #fff5f7;
-    color: #5a4e6c;
-    box-shadow: 0 6px 15px rgba(255, 182, 193, 0.4); /* pastel pink shadow */
+    background-color: #fff8f0;
+    color: #5a3e36;
+    box-shadow: 0 6px 15px rgba(90, 62, 54, 0.1);
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 25px;
     animation: fadeIn 1s ease;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .card:hover {
     transform: scale(1.02);
-    box-shadow: 0 10px 25px rgba(255, 182, 193, 0.6);
+    box-shadow: 0 10px 25px rgba(90, 62, 54, 0.15);
 }
 
 /* Fade in effect */
@@ -56,48 +63,56 @@ body, .css-18e3th9 {
 
 /* Bookmark button */
 .bookmark-btn {
-    background-color: #7f5a83;
-    color: #fff5f7;
+    background-color: #fcb69f;
+    color: #5a3e36;
     padding: 7px 12px;
     border-radius: 5px;
     border: none;
     cursor: pointer;
     margin-top: 10px;
     font-weight: bold;
-    box-shadow: 0 0 5px #7f5a83;
+    box-shadow: 0 0 5px #fcb69f;
     transition: all 0.3s ease;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .bookmark-btn:hover {
-    background-color: #a580a8;
-    box-shadow: 0 0 15px #a580a8;
+    background-color: #f9a372;
+    box-shadow: 0 0 15px #fcb69f;
+}
+
+/* Input text color */
+.stTextInput>div>div>input {
+    background-color: #fff8f0 !important;
+    color: #5a3e36 !important;
+    border-radius: 8px !important;
+    border: 1px solid #fcb69f !important;
+    padding: 8px !important;
+}
+
+/* Radio buttons label color */
+.css-1aumxhk label, .css-1aumxhk div {
+    color: #5a3e36 !important;
+    font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Divider */
 hr {
     border: none;
     height: 2px;
-    background: linear-gradient(90deg, #7f5a83, #fcb69f, #7f5a83);
+    background: linear-gradient(90deg, #fcb69f, #ffecd2, #fcb69f);
     margin-top: 40px;
     margin-bottom: 40px;
 }
 
-/* Styled inputs and selects */
-.stTextInput > div > input, 
-.stRadio > div > label, 
-.stRadio > div > input,
-.stButton > button {
-    background-color: #fff0f5 !important;
-    color: #5a4e6c !important;
-    border-radius: 8px !important;
-    border: 1.5px solid #d8bfd8 !important;
-}
-
-/* Copyright footer */
+/* Footer / copyright */
 .footer {
     text-align: center;
-    color: #7f5a83;
-    font-size: 0.85em;
-    margin: 40px 0 10px 0;
+    padding: 15px;
+    font-size: 0.9em;
+    color: #5a3e36;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-top: 40px;
 }
 </style>
 """
@@ -199,7 +214,9 @@ if st.session_state.bookmarks:
             </div>
         """, unsafe_allow_html=True)
 
-# --- Copyright footer ---
+# --- Footer / Copyright ---
 st.markdown("""
-<div class="footer">© 2025 NextRead. All rights reserved.</div>
+<div class="footer">
+    &copy; 2025 NextRead. All rights reserved.
+</div>
 """, unsafe_allow_html=True)
