@@ -12,19 +12,19 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Light shades background) ---
+# --- CSS Styling (Pastel theme) ---
 css = """
 <style>
 /* Body & Background */
 body, .css-18e3th9 {
-    background: linear-gradient(135deg, #f9f9f9, #e6e6e6);
-    color: #222222;
+    background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    color: #444444;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Title */
 .main-title {
-    color: #3a3a3a;  /* Dark gray */
+    color: #7f5a83;  /* Muted pastel purple */
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
@@ -34,9 +34,9 @@ body, .css-18e3th9 {
 
 /* Card styles */
 .card {
-    background-color: #ffffff;
-    color: #222222;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    background-color: #fff5f7;
+    color: #5a4e6c;
+    box-shadow: 0 6px 15px rgba(255, 182, 193, 0.4); /* pastel pink shadow */
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 25px;
@@ -45,7 +45,7 @@ body, .css-18e3th9 {
 }
 .card:hover {
     transform: scale(1.02);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 25px rgba(255, 182, 193, 0.6);
 }
 
 /* Fade in effect */
@@ -56,27 +56,27 @@ body, .css-18e3th9 {
 
 /* Bookmark button */
 .bookmark-btn {
-    background-color: #3a3a3a;
-    color: #f9f9f9;
+    background-color: #7f5a83;
+    color: #fff5f7;
     padding: 7px 12px;
     border-radius: 5px;
     border: none;
     cursor: pointer;
     margin-top: 10px;
     font-weight: bold;
-    box-shadow: 0 0 5px #444444;
+    box-shadow: 0 0 5px #7f5a83;
     transition: all 0.3s ease;
 }
 .bookmark-btn:hover {
-    background-color: #555555;
-    box-shadow: 0 0 15px #666666;
+    background-color: #a580a8;
+    box-shadow: 0 0 15px #a580a8;
 }
 
 /* Divider */
 hr {
     border: none;
     height: 2px;
-    background: linear-gradient(90deg, #888888, #cccccc, #888888);
+    background: linear-gradient(90deg, #7f5a83, #fcb69f, #7f5a83);
     margin-top: 40px;
     margin-bottom: 40px;
 }
@@ -86,16 +86,16 @@ hr {
 .stRadio > div > label, 
 .stRadio > div > input,
 .stButton > button {
-    background-color: #f0f0f0 !important;
-    color: #222222 !important;
+    background-color: #fff0f5 !important;
+    color: #5a4e6c !important;
     border-radius: 8px !important;
-    border: 1.5px solid #cccccc !important;
+    border: 1.5px solid #d8bfd8 !important;
 }
 
 /* Copyright footer */
 .footer {
     text-align: center;
-    color: #666666;
+    color: #7f5a83;
     font-size: 0.85em;
     margin: 40px 0 10px 0;
 }
