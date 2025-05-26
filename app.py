@@ -2,135 +2,196 @@ import streamlit as st
 import pandas as pd
 import random
 
-# Set page config
+# --- Page Config ---
 st.set_page_config(page_title="NextRead", layout="wide", page_icon="📚")
 
-# Load dataset
+# --- Load Data ---
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
-df = df[['title', 'authors', 'genre', 'average_ratings']].dropna()
-df = df.sample(frac=1).reset_index(drop=True)
 
-# Initialize bookmarks
+# --- Initialize bookmarks ---
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# CSS Styling
+# --- CSS Styling (Gradient bg, dark mode, colors, animations) ---
 css = """
 <style>
+/* Full gradient background for the entire app */
 body {
-    background: linear-gradient(to right, #1e1e2f, #2a2a3b, #1e1e2f);
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e1e2f, #2a2a3b, #1e1e2f);
     color: white;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
+/* Streamlit app container transparent to show bg */
+.stApp {
+    background: transparent !important;
+    padding: 20px 40px 40px 40px;
+}
+
+/* Title without glow */
 .main-title {
-    color: #FFD700;
+    color: #FFD700;  /* Gold */
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
+    text-shadow: none;
 }
+
+/* Search input container */
 .search-container {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 20px;
-    border-radius: 15px;
+    max-width: 600px;
     margin: 0 auto 40px auto;
-    max-width: 700px;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
 }
+
+/* Card styles with subtle gradient and shadow */
 .card {
-    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    background: linear-gradient(135deg, #2b2b3c, #1f1f2a);
     color: white;
-    padding: 20px;
+    box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
     border-radius: 15px;
+    padding: 20px 25px;
     margin-bottom: 25px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: 0.3s ease;
+    animation: fadeIn 1s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .card:hover {
-    transform: scale(1.01);
-    box-shadow: 0 10px 20px rgba(255,255,255,0.15);
+    transform: scale(1.03);
+    box-shadow: 0 12px 25px rgba(255, 215, 0, 0.6);
 }
+
+/* Fade in effect */
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Bookmark button */
 .bookmark-btn {
     background-color: #FFD700;
     color: black;
-    padding: 7px 12px;
-    border-radius: 5px;
-    margin-top: 10px;
-    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 6px;
     border: none;
     cursor: pointer;
+    margin-top: 12px;
+    font-weight: bold;
+    box-shadow: 0 0 6px #FFD700;
+    transition: all 0.3s ease;
 }
 .bookmark-btn:hover {
-    background-color: #e6c200;
+    background-color: #daa520;
+    box-shadow: 0 0 18px #FFD700;
+}
+
+/* Divider */
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, #FFD700, #FF8C00, #FFD700);
+    margin-top: 40px;
+    margin-bottom: 40px;
 }
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
 
-# App title
+# --- App Title ---
 st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
 
-# Search section
-st.markdown("<div class='search-container'>", unsafe_allow_html=True)
-search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True)
-if search_type == 'authors':
-    author = st.text_input("Enter author name:")
-elif search_type == 'title':
-    title = st.text_input("Enter book title:")
-st.markdown("</div>", unsafe_allow_html=True)
+# --- Search Bar Container ---
+with st.container():
+    search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True, label_visibility="collapsed")
+    if search_type == 'authors':
+        author = st.text_input("Enter author name:")
+    else:
+        title = st.text_input("Enter book title:")
 
-# Helper function to show book cards
-def display_books(book_data):
-    for _, row in book_data.iterrows():
-        with st.container():
-            st.markdown(f"""
-                <div class="card">
-                <h3>📖 {row['title']}</h3>
-                <p><strong>✍️ Author:</strong> {row['authors']}</p>
-                <p><strong>📚 Genre:</strong> {row['genre']}</p>
-                <p><strong>⭐ Average Rating:</strong> {row['average_ratings']}</p>
-                </div>
-            """, unsafe_allow_html=True)
-            if st.button("🔖 Bookmark", key=f"bookmark_{row['title']}"):
-                st.session_state.bookmarks.append(row)
+# --- Book Filter Functions ---
+def get_books_by_author(author_name):
+    matches = df[df['authors'].str.lower().str.contains(author_name.lower(), na=False)]
+    return matches[['title', 'average_ratings', 'authors', 'genre']] if not matches.empty else None
 
-# Search results
+def get_rating_by_title(book_title):
+    matches = df[df['title'].str.lower().str.contains(book_title.lower(), na=False)]
+    return matches[['title', 'authors', 'average_ratings', 'genre']] if not matches.empty else None
+
+# --- Display Book Cards ---
+def display_books(books):
+    for i, row in books.iterrows():
+        book_id = f"{row['title']}|{row['authors']}"
+        is_bookmarked = book_id in st.session_state.bookmarks
+        bookmark_text = "🔖 Remove Bookmark" if is_bookmarked else "⭐ Bookmark"
+        st.markdown(f"""
+            <div class='card'>
+                <strong>📖 {row['title']}</strong><br>
+                ✍️ Author: {row['authors']}<br>
+                📚 Genre: {row['genre']}<br>
+                ⭐ Average Rating: {row['average_ratings']}
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button(bookmark_text, key=book_id):
+            if is_bookmarked:
+                st.session_state.bookmarks.remove(book_id)
+            else:
+                st.session_state.bookmarks.append(book_id)
+            st.experimental_rerun()
+
+# --- Search Results ---
 if search_type == 'authors' and author:
-    results = df[df['authors'].str.lower().str.contains(author.lower(), na=False)]
-    if not results.empty:
+    with st.spinner('🔍 Searching books by author...'):
+        books = get_books_by_author(author)
+    if books is not None:
         st.markdown("### 📘 Books by Author:")
-        display_books(results)
+        display_books(books)
     else:
         st.warning(f"No books found for '{author}'.")
-
 elif search_type == 'title' and title:
-    results = df[df['title'].str.lower().str.contains(title.lower(), na=False)]
-    if not results.empty:
-        st.markdown("### 📘 Books by Title:")
-        display_books(results)
+    with st.spinner('🔍 Searching books by title...'):
+        books = get_rating_by_title(title)
+    if books is not None:
+        st.markdown("### 📘 Matching Book(s):")
+        display_books(books)
     else:
-        st.warning(f"No books found for '{title}'.")
+        st.warning(f"No books found with title '{title}'.")
 
-# Reader’s Picks section
-st.markdown("## 🌟 Reader’s Picks")
-random_picks = df.sample(min(5, len(df)))
-display_books(random_picks)
+# --- Surprise Me ---
+st.markdown("<hr>", unsafe_allow_html=True)
+if st.button("🎲 Surprise Me!"):
+    random_book = df.sample(1).iloc[0]
+    book_id = f"{random_book['title']}|{random_book['authors']}"
+    is_bookmarked = book_id in st.session_state.bookmarks
+    bookmark_text = "🔖 Remove Bookmark" if is_bookmarked else "⭐ Bookmark"
+    st.markdown(f"""
+        <div class='card'>
+            <strong>📖 {random_book['title']}</strong><br>
+            ✍️ Author: {random_book['authors']}<br>
+            📚 Genre: {random_book['genre']}<br>
+            ⭐ Average Rating: {random_book['average_ratings']}
+        </div>
+    """, unsafe_allow_html=True)
+    if st.button(bookmark_text, key="surprise_" + book_id):
+        if is_bookmarked:
+            st.session_state.bookmarks.remove(book_id)
+        else:
+            st.session_state.bookmarks.append(book_id)
+        st.experimental_rerun()
 
-# New Arrivals section
-st.markdown("## 🆕 New Arrivals")
-new_arrivals = df.tail(min(5, len(df)))
-display_books(new_arrivals)
-
-# Bookmarks section
+# --- Bookmarks Section ---
 if st.session_state.bookmarks:
-    st.markdown("## 🔖 Bookmarked Books")
-    for book in st.session_state.bookmarks:
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("### 🔖 Your Bookmarks")
+    for bm in st.session_state.bookmarks:
+        title, author = bm.split("|")
+        bm_data = df[(df['title'] == title) & (df['authors'] == author)].iloc[0]
         st.markdown(f"""
-            <div class="card">
-            <h3>📖 {book['title']}</h3>
-            <p><strong>✍️ Author:</strong> {book['authors']}</p>
-            <p><strong>📚 Genre:</strong> {book['genre']}</p>
-            <p><strong>⭐ Average Rating:</strong> {book['average_ratings']}</p>
+            <div class='card'>
+                <strong>📖 {bm_data['title']}</strong><br>
+                ✍️ Author: {bm_data['authors']}<br>
+                📚 Genre: {bm_data['genre']}<br>
+                ⭐ Average Rating: {bm_data['average_ratings']}
             </div>
         """, unsafe_allow_html=True)
