@@ -12,40 +12,30 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Dark gradient bg + inputs + cards + labels + footer) ---
+# --- CSS Styling (Dark mode, gradients, hide share overlay) ---
 css = """
 <style>
-/* Background gradient for the whole app */
-[data-testid="stAppViewContainer"], 
-[data-testid="stToolbar"], 
-[data-testid="stSidebar"] {
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364) !important;
-    color: white;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Body text color */
-body {
+/* Body & Background */
+body, .css-18e3th9 {
+    background: linear-gradient(135deg, #1f1f2e, #121212);
     color: white;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Title without glow */
 .main-title {
-    color: #FFD700;  /* Gold color */
+    color: #FFD700;  /* Gold */
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
     text-shadow: none;
 }
 
 /* Card styles */
 .card {
-    background-color: #1f1f1f;
+    background-color: #292933;
     color: white;
     box-shadow: 0 6px 15px rgba(255,255,255,0.05);
     border-radius: 15px;
@@ -92,55 +82,34 @@ hr {
     margin-bottom: 40px;
 }
 
-/* Input text and container */
-.css-1v0mbdj, /* container for input */
-.css-1d391kg, /* wrapper container for text input */
-.css-18ni7ap, /* input box container */
-.stTextInput > div > input {
-    background-color: #1f1f1f !important;
+/* Styled inputs and selects */
+.stTextInput > div > input, 
+.stRadio > div > label, 
+.stRadio > div > input,
+.stButton > button {
+    background-color: #292933 !important;
     color: white !important;
     border-radius: 8px !important;
     border: 1.5px solid #FFD700 !important;
-    padding: 8px !important;
 }
 
-/* Parent container background transparent */
-.css-1d391kg, .css-1v0mbdj {
-    background-color: transparent !important;
+/* Hide Streamlit share widget overlays */
+[aria-label="Share this app"], 
+div[title="Share this app"], 
+div[class*="share"], 
+button[class*="share"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
-/* Radio buttons text color */
-.stRadio label, .stRadio div {
-    color: white !important;
-}
-
-/* Search bar label */
-label {
-    color: white !important;
-    font-weight: 600;
-}
-
-/* Input placeholder text color */
-input[type="text"]::placeholder {
-    color: #bbb !important;
-    opacity: 1 !important;
-}
-
-/* Scrollbar for bookmarks if needed */
-.stMarkdown {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-/* Footer styles */
+/* Copyright footer */
 .footer {
-    margin-top: auto;
-    padding: 15px 0;
     text-align: center;
-    font-size: 0.9em;
-    color: #bbb;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #888;
+    font-size: 0.85em;
+    margin: 40px 0 10px 0;
 }
 </style>
 """
@@ -242,10 +211,7 @@ if st.session_state.bookmarks:
             </div>
         """, unsafe_allow_html=True)
 
-# --- Footer ---
-footer_html = """
-<div class="footer">
-    &copy; 2025 NextRead. All rights reserved.
-</div>
-"""
-st.markdown(footer_html, unsafe_allow_html=True)
+# --- Copyright footer ---
+st.markdown("""
+<div class="footer">© 2025 NextRead. All rights reserved.</div>
+""", unsafe_allow_html=True)
