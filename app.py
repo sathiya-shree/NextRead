@@ -1,222 +1,97 @@
 import streamlit as st
-import pandas as pd
-import random
 
-# --- Page Config ---
-st.set_page_config(page_title="NextRead", layout="wide", page_icon="📚")
+# --- Set Page Config ---
+st.set_page_config(page_title="Book Finder App", layout="wide")
 
-# --- Load Data ---
-df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
+# --- Apply Custom Pastel Styling ---
+st.markdown("""
+    <style>
+        html, body, [data-testid="stAppViewContainer"] {
+            background: linear-gradient(135deg, #fceae8 0%, #e0f7fa 100%) !important;
+            background-attachment: fixed !important;
+            color: #3a3a3a;
+        }
 
-# --- Initialize bookmarks ---
-if "bookmarks" not in st.session_state:
-    st.session_state.bookmarks = []
+        .stTextInput > div > div > input,
+        .stSelectbox > div > div > div > div,
+        .stTextArea textarea {
+            background-color: #ffffffcc !important;
+            color: #333333 !important;
+            border-radius: 10px;
+        }
 
-# --- CSS Styling with Pastel Gradient Background ---
-css = """
-<style>
-/* Override Streamlit main container background */
-.css-18e3th9 {
-    background: linear-gradient(135deg, #ffecd2, #fcb69f) !important;
-    min-height: 100vh;
-}
+        .stButton button {
+            background-color: #ffd3b6 !important;
+            color: #3a3a3a !important;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+        }
 
-/* Override body background */
-body {
-    background: linear-gradient(135deg, #ffecd2, #fcb69f) !important;
-}
+        .stRadio > div {
+            background-color: #ffffffcc !important;
+            color: #3a3a3a !important;
+            padding: 10px;
+            border-radius: 10px;
+        }
 
-/* Title without glow */
-.main-title {
-    color: #5a3e36;  /* soft brown */
-    font-size: 3.2em;
-    font-weight: bold;
-    text-align: center;
-    margin-top: 30px;
-    margin-bottom: 30px;
-    text-shadow: none;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+        .book-box {
+            background-color: #ffffffcc;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.05);
+        }
 
-/* Card styles */
-.card {
-    background-color: #fff8f0;
-    color: #5a3e36;
-    box-shadow: 0 6px 15px rgba(90, 62, 54, 0.1);
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 25px;
-    animation: fadeIn 1s ease;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-.card:hover {
-    transform: scale(1.02);
-    box-shadow: 0 10px 25px rgba(90, 62, 54, 0.15);
-}
-
-/* Fade in effect */
-@keyframes fadeIn {
-    0% { opacity: 0; transform: translateY(10px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-
-/* Bookmark button */
-.bookmark-btn {
-    background-color: #fcb69f;
-    color: #5a3e36;
-    padding: 7px 12px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    margin-top: 10px;
-    font-weight: bold;
-    box-shadow: 0 0 5px #fcb69f;
-    transition: all 0.3s ease;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-.bookmark-btn:hover {
-    background-color: #f9a372;
-    box-shadow: 0 0 15px #fcb69f;
-}
-
-/* Input text color */
-.stTextInput>div>div>input {
-    background-color: #fff8f0 !important;
-    color: #5a3e36 !important;
-    border-radius: 8px !important;
-    border: 1px solid #fcb69f !important;
-    padding: 8px !important;
-}
-
-/* Radio buttons label color */
-.css-1aumxhk label, .css-1aumxhk div {
-    color: #5a3e36 !important;
-    font-weight: 600;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Divider */
-hr {
-    border: none;
-    height: 2px;
-    background: linear-gradient(90deg, #fcb69f, #ffecd2, #fcb69f);
-    margin-top: 40px;
-    margin-bottom: 40px;
-}
-
-/* Footer / copyright */
-.footer {
-    text-align: center;
-    padding: 15px;
-    font-size: 0.9em;
-    color: #5a3e36;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin-top: 40px;
-}
-</style>
-"""
-st.markdown(css, unsafe_allow_html=True)
+        footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # --- App Title ---
-st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
+st.title("📚 Book Finder App")
 
-# --- Book Filter Functions ---
-def get_books_by_author(author_name):
-    matches = df[df['authors'].str.lower().str.contains(author_name.lower(), na=False)]
-    return matches[['title', 'average_ratings', 'authors', 'genre']] if not matches.empty else None
+# --- Search Bar ---
+search_option = st.radio("Search by:", ("Title", "Author", "Genre"))
+search_query = st.text_input(f"Enter {search_option.lower()}:")
 
-def get_rating_by_title(book_title):
-    matches = df[df['title'].str.lower().str.contains(book_title.lower(), na=False)]
-    return matches[['title', 'authors', 'average_ratings', 'genre']] if not matches.empty else None
+# --- Sample Book Data ---
+books = [
+    {"title": "The Hobbit", "author": "J.R.R. Tolkien", "genre": "Fantasy", "rating": "4.7"},
+    {"title": "1984", "author": "George Orwell", "genre": "Science Fiction", "rating": "4.6"},
+    {"title": "The Girl with the Dragon Tattoo", "author": "Stieg Larsson", "genre": "Mystery", "rating": "4.5"},
+    {"title": "Twilight", "author": "Stephenie Meyer", "genre": "Fantasy", "rating": "3.9"},
+    {"title": "To Kill a Mockingbird", "author": "Harper Lee", "genre": "Fiction", "rating": "4.8"},
+]
 
-# --- Display Book Cards ---
-def display_books(books):
-    for i, row in books.iterrows():
-        book_id = f"{row['title']}|{row['authors']}"
-        is_bookmarked = book_id in st.session_state.bookmarks
-        bookmark_text = "🔖 Remove Bookmark" if is_bookmarked else "⭐ Bookmark"
-        st.markdown(f"""
-            <div class='card'>
-                <strong>📖 {row['title']}</strong><br>
-                ✍️ Author: {row['authors']}<br>
-                📚 Genre: {row['genre']}<br>
-                ⭐ Average Rating: {row['average_ratings']}
-            </div>
-        """, unsafe_allow_html=True)
-        if st.button(bookmark_text, key=book_id):
-            if is_bookmarked:
-                st.session_state.bookmarks.remove(book_id)
-            else:
-                st.session_state.bookmarks.append(book_id)
-            st.experimental_rerun()
+# --- Filter Logic ---
+filtered_books = [
+    book for book in books
+    if search_query.lower() in book[search_option.lower()].lower()
+]
 
-# --- Search Feature ---
-search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True)
+# --- Display Results ---
+if search_query:
+    if filtered_books:
+        for book in filtered_books:
+            st.markdown(f"""
+                <div class="book-box">
+                    <h4>📖 {book['title']}</h4>
+                    <p>✍️ <strong>Author:</strong> {book['author']}</p>
+                    <p>📚 <strong>Genre:</strong> {book['genre']}</p>
+                    <p>⭐ <strong>Average Rating:</strong> {book['rating']}</p>
+                </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.warning("No books found. Please try another search.")
 
-if search_type == 'authors':
-    author = st.text_input("Enter author name:")
-    if author:
-        with st.spinner('🔍 Searching books by author...'):
-            books = get_books_by_author(author)
-        if books is not None:
-            st.markdown("### 📘 Books by Author:")
-            display_books(books)
-        else:
-            st.warning(f"No books found for '{author}'.")
-
-elif search_type == 'title':
-    title = st.text_input("Enter book title:")
-    if title:
-        with st.spinner('🔍 Searching books by title...'):
-            books = get_rating_by_title(title)
-        if books is not None:
-            st.markdown("### 📘 Matching Book(s):")
-            display_books(books)
-        else:
-            st.warning(f"No books found with title '{title}'.")
-
-# --- Surprise Me ---
-st.markdown("<hr>", unsafe_allow_html=True)
-if st.button("🎲 Surprise Me!"):
-    random_book = df.sample(1).iloc[0]
-    book_id = f"{random_book['title']}|{random_book['authors']}"
-    is_bookmarked = book_id in st.session_state.bookmarks
-    bookmark_text = "🔖 Remove Bookmark" if is_bookmarked else "⭐ Bookmark"
-    st.markdown(f"""
-        <div class='card'>
-            <strong>📖 {random_book['title']}</strong><br>
-            ✍️ Author: {random_book['authors']}<br>
-            📚 Genre: {random_book['genre']}<br>
-            ⭐ Average Rating: {random_book['average_ratings']}
-        </div>
-    """, unsafe_allow_html=True)
-    if st.button(bookmark_text, key="surprise_" + book_id):
-        if is_bookmarked:
-            st.session_state.bookmarks.remove(book_id)
-        else:
-            st.session_state.bookmarks.append(book_id)
-        st.experimental_rerun()
-
-# --- Bookmarks Section ---
-if st.session_state.bookmarks:
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("### 🔖 Your Bookmarks")
-    for bm in st.session_state.bookmarks:
-        title, author = bm.split("|")
-        bm_data = df[(df['title'] == title) & (df['authors'] == author)].iloc[0]
-        st.markdown(f"""
-            <div class='card'>
-                <strong>📖 {bm_data['title']}</strong><br>
-                ✍️ Author: {bm_data['authors']}<br>
-                📚 Genre: {bm_data['genre']}<br>
-                ⭐ Average Rating: {bm_data['average_ratings']}
-            </div>
-        """, unsafe_allow_html=True)
-
-# --- Footer / Copyright ---
+# --- Footer ---
 st.markdown("""
-<div class="footer">
-    &copy; 2025 NextRead. All rights reserved.
-</div>
+    <footer>
+        © 2025 Next Read.
+    </footer>
 """, unsafe_allow_html=True)
