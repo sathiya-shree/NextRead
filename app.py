@@ -92,6 +92,6 @@ if search_query:
 # --- Footer ---
 st.markdown("""
     <footer>
-        © 2025 Next Read.
+        © 2025 NextRead. All rights reserved.
     </footer>
 """, unsafe_allow_html=True)
