@@ -2,19 +2,19 @@ import streamlit as st
 import pandas as pd
 import random
 
-# Page config
+# Set up Streamlit page
 st.set_page_config(page_title="NextRead", layout="wide", page_icon="📚")
 
 # Load dataset
 df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
-df = df[['title', 'authors', 'genres', 'average_ratings']].dropna()
+df = df[['title', 'authors', 'genre', 'average_ratings']].dropna()
 df = df.sample(frac=1).reset_index(drop=True)
 
 # Initialize bookmarks
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# CSS for gradient background and search bar
+# CSS for background and layout
 css = """
 <style>
 body {
@@ -68,10 +68,10 @@ body {
 """
 st.markdown(css, unsafe_allow_html=True)
 
-# Title
+# App title
 st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
 
-# Search container with radio + input at the top
+# Search section
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
 search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True)
 if search_type == 'authors':
@@ -80,14 +80,29 @@ elif search_type == 'title':
     title = st.text_input("Enter book title:")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Define search functions
+# Helper functions
+def display_books(book_data):
+    for _, row in book_data.iterrows():
+        with st.container():
+            st.markdown(f"""
+                <div class="card">
+                <h3>📖 {row['title']}</h3>
+                <p><strong>✍️ Author:</strong> {row['authors']}</p>
+                <p><strong>📚 Genre:</strong> {row['genre']}</p>
+                <p><strong>⭐ Average Rating:</strong> {row['average_ratings']}</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+            if st.button("🔖 Bookmark", key=f"bookmark_{row['title']}"):
+                st.session_state.bookmarks.append(row)
+
 def get_books_by_author(author_name):
     return df[df['authors'].str.lower().str.contains(author_name.lower(), na=False)]
 
 def get_books_by_title(title_name):
     return df[df['title'].str.lower().str.contains(title_name.lower(), na=False)]
 
-# Display results
+# Search Results
 if search_type == 'authors' and author:
     results = get_books_by_author(author)
     if not results.empty:
@@ -103,3 +118,16 @@ if search_type == 'title' and title:
         display_books(results)
     else:
         st.warning(f"No books found for '{title}'.")
+
+# Bookmarks section
+if st.session_state.bookmarks:
+    st.markdown("### 🔖 Bookmarked Books")
+    for book in st.session_state.bookmarks:
+        st.markdown(f"""
+            <div class="card">
+            <h3>📖 {book['title']}</h3>
+            <p><strong>✍️ Author:</strong> {book['authors']}</p>
+            <p><strong>📚 Genre:</strong> {book['genre']}</p>
+            <p><strong>⭐ Average Rating:</strong> {book['average_ratings']}</p>
+            </div>
+        """, unsafe_allow_html=True)
