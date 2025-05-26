@@ -12,7 +12,7 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Dark gradient bg + inputs + cards + labels) ---
+# --- CSS Styling (Dark gradient bg + inputs + cards + labels + footer) ---
 css = """
 <style>
 /* Background gradient for the whole app */
@@ -21,6 +21,9 @@ css = """
 [data-testid="stSidebar"] {
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364) !important;
     color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Body text color */
@@ -128,6 +131,17 @@ input[type="text"]::placeholder {
     max-height: 400px;
     overflow-y: auto;
 }
+
+/* Footer styles */
+.footer {
+    margin-top: auto;
+    padding: 15px 0;
+    text-align: center;
+    font-size: 0.9em;
+    color: #bbb;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
@@ -227,3 +241,11 @@ if st.session_state.bookmarks:
                 ⭐ Average Rating: {bm_data['average_ratings']}
             </div>
         """, unsafe_allow_html=True)
+
+# --- Footer ---
+footer_html = """
+<div class="footer">
+    &copy; 2025 NextRead. All rights reserved.
+</div>
+"""
+st.markdown(footer_html, unsafe_allow_html=True)
