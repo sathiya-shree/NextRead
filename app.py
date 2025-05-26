@@ -12,7 +12,7 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Dark gradient bg, styled inputs, cards, etc.) ---
+# --- CSS Styling (Dark gradient bg + inputs + cards + labels) ---
 css = """
 <style>
 /* Background gradient for the whole app */
@@ -97,7 +97,8 @@ hr {
     background-color: #1f1f1f !important;
     color: white !important;
     border-radius: 8px !important;
-    border: 1px solid #FFD700 !important;
+    border: 1.5px solid #FFD700 !important;
+    padding: 8px !important;
 }
 
 /* Parent container background transparent */
@@ -111,8 +112,15 @@ hr {
 }
 
 /* Search bar label */
-label[for="authors"], label[for="title"] {
-    color: white;
+label {
+    color: white !important;
+    font-weight: 600;
+}
+
+/* Input placeholder text color */
+input[type="text"]::placeholder {
+    color: #bbb !important;
+    opacity: 1 !important;
 }
 
 /* Scrollbar for bookmarks if needed */
