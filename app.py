@@ -12,103 +12,103 @@ df = pd.read_csv("required.csv", on_bad_lines='skip', encoding='utf-8')
 if "bookmarks" not in st.session_state:
     st.session_state.bookmarks = []
 
-# --- CSS Styling (Pastel colors and effects) ---
+# --- CSS Styling ---
 css = """
 <style>
 body {
-    background: linear-gradient(to right, #fef6e4, #e3f6f5, #fff1e6);
-    color: #333;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
 }
 
-/* Title styling */
+/* Animated pastel gradient background */
+.stApp {
+    background: linear-gradient(-45deg, #fef6f9, #f1f7ff, #f0fff4, #fffdf0);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: #333;
+}
+
+/* Gradient animation keyframes */
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 .main-title {
-    color: #6b5b95;
+    color: #5f4b8b;
     font-size: 3.2em;
     font-weight: bold;
     text-align: center;
     margin-top: 30px;
-    margin-bottom: 10px;
+    margin-bottom: 40px;
 }
 
-/* Search UI */
-label, .stTextInput label, .stRadio label {
-    color: #6b5b95;
-    font-weight: bold;
-}
-
-/* Card styles */
+/* Card styling */
 .card {
-    background-color: #fdfcdc;
-    color: #333;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    background-color: rgba(255, 255, 255, 0.75);
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 25px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    animation: fadeIn 1s ease;
-}
-.card:hover {
-    transform: scale(1.02);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.8s ease;
 }
 
+/* Fade animation for cards */
 @keyframes fadeIn {
-    0% { opacity: 0; transform: translateY(10px); }
-    100% { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* Bookmark button */
 .bookmark-btn {
-    background-color: #ffb6b9;
-    color: #333;
+    background-color: #ffd700;
+    color: black;
     padding: 7px 12px;
     border-radius: 5px;
     border: none;
     cursor: pointer;
-    margin-top: 10px;
     font-weight: bold;
-    box-shadow: 0 0 5px #ffb6b9;
     transition: all 0.3s ease;
 }
 .bookmark-btn:hover {
-    background-color: #ff6f61;
-    color: white;
+    background-color: #f4c430;
 }
 
-/* Divider */
+/* Input and Radio styling */
+input, .stRadio, .stTextInput > div > div > input {
+    background-color: white !important;
+    color: #333 !important;
+    border-radius: 10px;
+    padding: 8px;
+    font-size: 16px;
+}
+
 hr {
     border: none;
     height: 2px;
-    background: linear-gradient(90deg, #ffb6b9, #fae3d9, #bbded6);
+    background: linear-gradient(90deg, #5f4b8b, #ffd700, #5f4b8b);
     margin-top: 40px;
     margin-bottom: 40px;
 }
 
 /* Footer */
-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: #fef6e4;
-    color: #6b5b95;
+.footer {
     text-align: center;
-    padding: 10px;
-    font-size: 14px;
+    padding: 20px;
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 50px;
 }
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
 
-# --- App Title ---
+# --- Title ---
 st.markdown("<h1 class='main-title'>📚 NextRead</h1>", unsafe_allow_html=True)
 
-# --- Search Feature on Top ---
-st.markdown("<hr>", unsafe_allow_html=True)
-search_type = st.radio("Search by:", ['author', 'title'], horizontal=True)
+# --- Search Bar ---
+search_type = st.radio("Search by:", ['authors', 'title'], horizontal=True)
 
-# --- Book Filter Functions ---
 def get_books_by_author(author_name):
     matches = df[df['authors'].str.lower().str.contains(author_name.lower(), na=False)]
     return matches[['title', 'average_ratings', 'authors', 'genre']] if not matches.empty else None
@@ -117,7 +117,6 @@ def get_rating_by_title(book_title):
     matches = df[df['title'].str.lower().str.contains(book_title.lower(), na=False)]
     return matches[['title', 'authors', 'average_ratings', 'genre']] if not matches.empty else None
 
-# --- Display Book Cards ---
 def display_books(books):
     for i, row in books.iterrows():
         book_id = f"{row['title']}|{row['authors']}"
@@ -138,7 +137,7 @@ def display_books(books):
                 st.session_state.bookmarks.append(book_id)
             st.experimental_rerun()
 
-if search_type == 'author':
+if search_type == 'authors':
     author = st.text_input("Enter author name:")
     if author:
         with st.spinner('🔍 Searching books by author...'):
@@ -199,8 +198,4 @@ if st.session_state.bookmarks:
         """, unsafe_allow_html=True)
 
 # --- Footer ---
-st.markdown("""
-<footer>
-    © 2025 NextRead. All rights reserved.
-</footer>
-""", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 NextRead. All rights reserved.</div>", unsafe_allow_html=True)
