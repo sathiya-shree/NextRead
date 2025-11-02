@@ -19,7 +19,7 @@ It is a sleek, minimalistic book discovery app built using Streamlit. It allows 
 
 ## 🛠 Tech Stack
 
-- [Streamlit](https://streamlit.io/) — For frontend and app framework
+- [Streamlit] (https://nextread-books.streamlit.app/) — For frontend and app framework
 - `pandas` — Data handling
 - `HTML/CSS` — Custom styling and animations
 
