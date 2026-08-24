@@ -1,155 +1,421 @@
 import streamlit as st
 import pandas as pd
+import sqlite3
 import random
+from datetime import datetime
 
 # ============================================================
-# APP CONFIGURATION
+# PAGE CONFIG
 # ============================================================
 
 st.set_page_config(
-    page_title="BookNest",
-    page_icon="📚",
+    page_title="Bookish",
+    page_icon="🌷",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ============================================================
-# CUSTOM DESIGN
+# DATABASE
+# ============================================================
+
+DB_NAME = "bookish.db"
+
+
+def get_connection():
+    return sqlite3.connect(DB_NAME, check_same_thread=False)
+
+
+def create_database():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS shelves (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_key TEXT UNIQUE,
+            shelf TEXT,
+            progress INTEGER DEFAULT 0,
+            added_at TEXT
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_key TEXT,
+            rating REAL,
+            review TEXT,
+            reaction TEXT,
+            created_at TEXT
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS discussions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_key TEXT,
+            username TEXT,
+            message TEXT,
+            created_at TEXT
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS challenges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            challenge_name TEXT,
+            target INTEGER,
+            completed INTEGER DEFAULT 0
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+create_database()
+
+
+# ============================================================
+# LOAD BOOK DATA
+# ============================================================
+
+@st.cache_data
+def load_books():
+
+    try:
+
+        data = pd.read_csv(
+            "required.csv",
+            encoding="utf-8",
+            on_bad_lines="skip"
+        )
+
+        data.columns = data.columns.str.strip()
+
+        required_columns = [
+            "title",
+            "authors",
+            "average_ratings",
+            "genre"
+        ]
+
+        for column in required_columns:
+
+            if column not in data.columns:
+                data[column] = "Unknown"
+
+        return data
+
+    except FileNotFoundError:
+
+        st.error(
+            "required.csv was not found. "
+            "Place it in the same folder as app.py."
+        )
+
+        st.stop()
+
+
+books = load_books()
+
+
+# ============================================================
+# SESSION STATE
+# ============================================================
+
+if "page" not in st.session_state:
+    st.session_state.page = "Home"
+
+if "random_book" not in st.session_state:
+    st.session_state.random_book = None
+
+if "selected_book" not in st.session_state:
+    st.session_state.selected_book = None
+
+
+# ============================================================
+# STYLING
 # ============================================================
 
 st.markdown("""
 <style>
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+@import url(
+'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&
+family=Playfair+Display:wght@500;600;700&
+family=Pacifico&display=swap'
+);
 
-html, body, [class*="css"] {
+* {
     font-family: 'DM Sans', sans-serif;
 }
 
 .stApp {
-    background: #f7f5f2;
+    background:
+        radial-gradient(
+            circle at 10% 10%,
+            #ffeaf2 0,
+            transparent 25%
+        ),
+        radial-gradient(
+            circle at 90% 20%,
+            #e9f2ff 0,
+            transparent 25%
+        ),
+        #fffaf7;
 }
 
-/* Sidebar */
+/* SIDEBAR */
+
 [data-testid="stSidebar"] {
-    background: #24201d;
+
+    background:
+        linear-gradient(
+            180deg,
+            #fff4f7,
+            #f7f1ff
+        );
+
+    border-right: 1px solid #f1dce5;
 }
 
 [data-testid="stSidebar"] * {
-    color: #f5f1eb !important;
+    color: #44353b !important;
 }
 
-/* Main heading */
-.hero-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 54px;
-    font-weight: 700;
-    color: #29231f;
+/* BRAND */
+
+.logo {
+
+    font-family: 'Pacifico', cursive;
+
+    font-size: 38px;
+
+    color: #c66b91;
+
+    text-align: center;
+
     margin-bottom: 0;
 }
 
-.hero-subtitle {
-    color: #756d66;
-    font-size: 18px;
-    margin-top: 5px;
-    margin-bottom: 35px;
+.tagline {
+
+    text-align: center;
+
+    color: #927985;
+
+    font-size: 13px;
+
+    margin-bottom: 25px;
 }
 
-/* Section heading */
+/* HERO */
+
+.hero {
+
+    background:
+        linear-gradient(
+            135deg,
+            #fff0f5,
+            #f5efff
+        );
+
+    border-radius: 28px;
+
+    padding: 42px;
+
+    margin-bottom: 28px;
+
+    border: 1px solid #f3dfe9;
+
+    box-shadow:
+        0 15px 45px
+        rgba(180, 120, 150, 0.08);
+}
+
+.hero h1 {
+
+    font-family: 'Playfair Display', serif;
+
+    color: #49363f;
+
+    font-size: 45px;
+
+    margin-bottom: 5px;
+}
+
+.hero p {
+
+    color: #806f78;
+
+    font-size: 17px;
+}
+
+/* SECTION */
+
 .section-title {
+
     font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    color: #302923;
-    margin-top: 20px;
-}
 
-/* Book card */
-.book-card {
-    background: white;
-    border-radius: 18px;
-    padding: 24px;
-    margin-bottom: 18px;
-    border: 1px solid #e9e3dc;
-    box-shadow: 0 5px 20px rgba(50, 40, 30, 0.06);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+    color: #49363f;
 
-.book-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(50, 40, 30, 0.10);
-}
+    font-size: 29px;
 
-.book-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 23px;
-    font-weight: 700;
-    color: #2d2621;
-}
+    margin-top: 30px;
 
-.book-author {
-    color: #7a6d62;
-    margin-top: 5px;
     margin-bottom: 15px;
 }
 
-.book-info {
-    color: #554b44;
+/* BOOK CARD */
+
+.book-card {
+
+    background: rgba(255,255,255,0.9);
+
+    border: 1px solid #f0e3e7;
+
+    border-radius: 22px;
+
+    padding: 23px;
+
+    margin-bottom: 18px;
+
+    box-shadow:
+        0 8px 30px
+        rgba(100,70,80,0.06);
+
+    transition: 0.25s;
+}
+
+.book-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow:
+        0 15px 35px
+        rgba(100,70,80,0.10);
+}
+
+.book-title {
+
+    font-family: 'Playfair Display', serif;
+
+    font-size: 22px;
+
+    font-weight: 700;
+
+    color: #46343b;
+}
+
+.book-author {
+
+    color: #a07889;
+
+    margin: 5px 0 15px;
+}
+
+.book-meta {
+
+    color: #75666c;
+
     font-size: 14px;
+
     line-height: 1.8;
 }
 
-/* Metric cards */
-.metric-box {
+/* MOOD CARD */
+
+.mood-card {
+
     background: white;
-    padding: 18px;
-    border-radius: 15px;
+
+    border-radius: 20px;
+
+    padding: 22px;
+
     text-align: center;
-    border: 1px solid #e9e3dc;
+
+    border: 1px solid #f0e2e8;
+
+    min-height: 120px;
 }
 
-.metric-number {
-    font-size: 28px;
+.mood-card:hover {
+
+    border-color: #d99ab4;
+
+}
+
+/* STAT CARD */
+
+.stat-card {
+
+    background: white;
+
+    border-radius: 20px;
+
+    padding: 20px;
+
+    text-align: center;
+
+    border: 1px solid #f0e2e8;
+}
+
+.stat-number {
+
+    font-size: 30px;
+
     font-weight: 700;
-    color: #7c5c45;
+
+    color: #c06b91;
 }
 
-.metric-label {
+.stat-label {
+
     font-size: 13px;
-    color: #81766d;
+
+    color: #8b7b82;
 }
 
-/* Buttons */
+/* BUTTON */
+
 .stButton > button {
-    border-radius: 10px;
-    border: 1px solid #d8cfc6;
-    background: #fff;
-    color: #4b4038;
+
+    border-radius: 12px;
+
+    border: 1px solid #e4ccd7;
+
+    background: white;
+
+    color: #704f5d;
+
     font-weight: 600;
+
+    transition: 0.2s;
 }
 
 .stButton > button:hover {
-    border-color: #8b6a51;
-    color: #8b6a51;
+
+    border-color: #c66b91;
+
+    color: #c66b91;
+
+    transform: translateY(-1px);
 }
 
-/* Search inputs */
-.stTextInput input {
-    border-radius: 12px;
-    border: 1px solid #ddd5cd;
-    background: white;
-}
+/* FOOTER */
 
-/* Select boxes */
-.stSelectbox div[data-baseweb="select"] > div {
-    border-radius: 12px;
-}
-
-/* Footer */
 .footer {
+
     text-align: center;
-    color: #8b8179;
-    margin-top: 60px;
-    padding: 25px;
+
+    color: #a18f97;
+
+    padding: 40px 0 20px;
+
     font-size: 13px;
 }
 
@@ -158,113 +424,185 @@ html, body, [class*="css"] {
 
 
 # ============================================================
-# DATA LOADING
+# DATABASE HELPERS
 # ============================================================
 
-@st.cache_data
-def load_books():
-    try:
-        books = pd.read_csv(
-            "required.csv",
-            encoding="utf-8",
-            on_bad_lines="skip"
+def make_key(book):
+
+    return (
+        str(book["title"])
+        + "||"
+        + str(book["authors"])
+    )
+
+
+def get_shelf(book_key):
+
+    conn = get_connection()
+
+    result = conn.execute(
+        """
+        SELECT shelf, progress
+        FROM shelves
+        WHERE book_key = ?
+        """,
+        (book_key,)
+    ).fetchone()
+
+    conn.close()
+
+    if result:
+        return result[0], result[1]
+
+    return None, 0
+
+
+def save_to_shelf(book, shelf):
+
+    key = make_key(book)
+
+    conn = get_connection()
+
+    conn.execute(
+        """
+        INSERT INTO shelves
+        (book_key, shelf, added_at)
+        VALUES (?, ?, ?)
+
+        ON CONFLICT(book_key)
+        DO UPDATE SET shelf = excluded.shelf
+        """,
+        (
+            key,
+            shelf,
+            datetime.now().isoformat()
         )
+    )
 
-        books.columns = books.columns.str.strip()
-
-        return books
-
-    except FileNotFoundError:
-        st.error("required.csv could not be found.")
-        st.stop()
-
-    except Exception as error:
-        st.error(f"Unable to load the book database: {error}")
-        st.stop()
+    conn.commit()
+    conn.close()
 
 
-books_df = load_books()
+def remove_from_shelf(book):
+
+    key = make_key(book)
+
+    conn = get_connection()
+
+    conn.execute(
+        "DELETE FROM shelves WHERE book_key = ?",
+        (key,)
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def get_shelf_books(shelf):
+
+    conn = get_connection()
+
+    rows = conn.execute(
+        """
+        SELECT book_key
+        FROM shelves
+        WHERE shelf = ?
+        """,
+        (shelf,)
+    ).fetchall()
+
+    conn.close()
+
+    return [row[0] for row in rows]
+
+
+def save_review(book, rating, review, reaction):
+
+    key = make_key(book)
+
+    conn = get_connection()
+
+    conn.execute(
+        """
+        INSERT INTO reviews
+        (book_key, rating, review, reaction, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            key,
+            rating,
+            review,
+            reaction,
+            datetime.now().isoformat()
+        )
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def add_discussion(book, message):
+
+    key = make_key(book)
+
+    conn = get_connection()
+
+    conn.execute(
+        """
+        INSERT INTO discussions
+        (book_key, username, message, created_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            key,
+            "Reader",
+            message,
+            datetime.now().isoformat()
+        )
+    )
+
+    conn.commit()
+    conn.close()
 
 
 # ============================================================
-# SESSION STATE
+# BOOK CARD
 # ============================================================
 
-if "saved_books" not in st.session_state:
-    st.session_state.saved_books = []
+def display_book(book, key_prefix):
 
-if "random_book" not in st.session_state:
-    st.session_state.random_book = None
+    title = str(book["title"])
 
+    author = str(book["authors"])
 
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
+    genre = str(book["genre"])
 
-def book_key(book):
-    """Create a unique identifier for a book."""
-    return f"{book['title']}::{book['authors']}"
+    rating = str(book["average_ratings"])
 
+    book_key = make_key(book)
 
-def search_books(keyword, column):
-    """Search the database using a selected column."""
-
-    if not keyword.strip():
-        return pd.DataFrame()
-
-    search_value = keyword.strip().lower()
-
-    matches = books_df[
-        books_df[column]
-        .fillna("")
-        .astype(str)
-        .str.lower()
-        .str.contains(search_value, na=False)
-    ]
-
-    return matches
-
-
-def toggle_saved(book):
-    """Add or remove a book from saved books."""
-
-    identifier = book_key(book)
-
-    if identifier in st.session_state.saved_books:
-        st.session_state.saved_books.remove(identifier)
-    else:
-        st.session_state.saved_books.append(identifier)
-
-
-def is_saved(book):
-    return book_key(book) in st.session_state.saved_books
-
-
-def show_book(book, button_prefix="book"):
-    """Display one book as a card."""
-
-    title = str(book.get("title", "Unknown Title"))
-    author = str(book.get("authors", "Unknown Author"))
-    genre = str(book.get("genre", "Not specified"))
-    rating = str(book.get("average_ratings", "N/A"))
-
-    saved = is_saved(book)
+    shelf, progress = get_shelf(book_key)
 
     st.markdown(
         f"""
         <div class="book-card">
 
             <div class="book-title">
-                {title}
+                📖 {title}
             </div>
 
             <div class="book-author">
                 by {author}
             </div>
 
-            <div class="book-info">
-                📚 <b>Genre:</b> {genre}<br>
-                ⭐ <b>Average Rating:</b> {rating}
+            <div class="book-meta">
+
+                ⭐ <b>{rating}</b>
+
+                &nbsp;&nbsp; • &nbsp;&nbsp;
+
+                🏷️ {genre}
+
             </div>
 
         </div>
@@ -272,25 +610,69 @@ def show_book(book, button_prefix="book"):
         unsafe_allow_html=True
     )
 
-    button_label = "💔 Remove from Library" if saved else "♡ Save to Library"
+    c1, c2, c3 = st.columns(3)
 
-    if st.button(
-        button_label,
-        key=f"{button_prefix}_{book_key(book)}"
-    ):
-        toggle_saved(book)
-        st.rerun()
+    with c1:
 
+        shelf_option = st.selectbox(
+            "Shelf",
+            [
+                "Not added",
+                "Want to Read",
+                "Currently Reading",
+                "Read"
+            ],
+            index=(
+                [
+                    "Not added",
+                    "Want to Read",
+                    "Currently Reading",
+                    "Read"
+                ].index(shelf)
+                if shelf in [
+                    "Want to Read",
+                    "Currently Reading",
+                    "Read"
+                ]
+                else 0
+            ),
+            key=f"shelf_{key_prefix}_{book_key}"
+        )
 
-def get_book_count():
-    return len(books_df)
+    with c2:
 
+        if st.button(
+            "💾 Save",
+            key=f"save_{key_prefix}_{book_key}"
+        ):
 
-def get_genre_count():
-    if "genre" not in books_df.columns:
-        return 0
+            if shelf_option == "Not added":
 
-    return books_df["genre"].dropna().nunique()
+                remove_from_shelf(book)
+
+            else:
+
+                save_to_shelf(
+                    book,
+                    shelf_option
+                )
+
+            st.success("Shelf updated!")
+
+            st.rerun()
+
+    with c3:
+
+        if st.button(
+            "💭 Review",
+            key=f"review_{key_prefix}_{book_key}"
+        ):
+
+            st.session_state.selected_book = book
+
+            st.session_state.page = "Reviews"
+
+            st.rerun()
 
 
 # ============================================================
@@ -300,235 +682,702 @@ def get_genre_count():
 with st.sidebar:
 
     st.markdown(
+        '<div class="logo">Bookish</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="tagline">your little reading corner ♡</div>',
+        unsafe_allow_html=True
+    )
+
+    st.divider()
+
+    pages = [
+        "🏠 Home",
+        "🔎 Discover",
+        "📚 My Books",
+        "💬 Book Rooms",
+        "🎯 Challenges",
+        "📊 Reading Wrapped",
+        "👤 Profile"
+    ]
+
+    selected_page = st.radio(
+        "Explore",
+        pages,
+        label_visibility="collapsed"
+    )
+
+    st.session_state.page = selected_page.replace(
+        "🏠 ", ""
+    ).replace(
+        "🔎 ", ""
+    ).replace(
+        "📚 ", ""
+    ).replace(
+        "💬 ", ""
+    ).replace(
+        "🎯 ", ""
+    ).replace(
+        "📊 ", ""
+    ).replace(
+        "👤 ", ""
+    )
+
+    st.divider()
+
+    st.caption("Made for people who read with their whole heart ♡")
+
+
+# ============================================================
+# HOME
+# ============================================================
+
+if st.session_state.page == "Home":
+
+    st.markdown(
         """
-        <h1 style="font-family: 'Playfair Display';">
-        📚 BookNest
-        </h1>
+        <div class="hero">
+
+            <h1>Good evening, reader 🌙</h1>
+
+            <p>
+            Your next favorite story might be one click away.
+            </p>
+
+        </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.caption("Find your next favorite read.")
-
-    st.divider()
-
-    page = st.radio(
-        "Navigate",
-        [
-            "🔎 Discover",
-            "🎲 Random Pick",
-            "🔖 My Library"
-        ]
-    )
-
-    st.divider()
-
-    st.markdown("### Database")
-
-    st.write(f"📚 {get_book_count():,} books")
-
-    st.write(f"🏷️ {get_genre_count():,} genres")
-
-    st.write(
-        f"🔖 {len(st.session_state.saved_books)} saved"
-    )
-
-
-# ============================================================
-# MAIN HEADER
-# ============================================================
-
-st.markdown(
-    '<div class="hero-title">Find a book worth getting lost in.</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<div class="hero-subtitle">'
-    'Search the collection, discover something unexpected, '
-    'and build your personal reading shelf.'
-    '</div>',
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
-# DISCOVER PAGE
-# ============================================================
-
-if page == "🔎 Discover":
-
-    # Statistics
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown(
-            f"""
-            <div class="metric-box">
-                <div class="metric-number">
-                    {len(books_df):,}
-                </div>
-                <div class="metric-label">
-                    Books Available
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with col2:
-        st.markdown(
-            f"""
-            <div class="metric-box">
-                <div class="metric-number">
-                    {get_genre_count():,}
-                </div>
-                <div class="metric-label">
-                    Genres
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with col3:
-        st.markdown(
-            f"""
-            <div class="metric-box">
-                <div class="metric-number">
-                    {len(st.session_state.saved_books)}
-                </div>
-                <div class="metric-label">
-                    In Your Library
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
     st.markdown(
-        '<div class="section-title">Search the collection</div>',
+        '<div class="section-title">'
+        'What kind of story do you need today?'
+        '</div>',
         unsafe_allow_html=True
     )
 
-    search_column = st.selectbox(
-        "Search using",
-        ["title", "authors"],
-        format_func=lambda value: {
-            "title": "📖 Book Title",
-            "authors": "✍️ Author"
-        }[value]
+    moods = [
+        ("🌧️", "I need comfort"),
+        ("🥀", "Make me cry"),
+        ("🧠", "Make me think"),
+        ("🕯️", "Something dark"),
+        ("💌", "Give me butterflies"),
+        ("🌱", "I need a fresh start")
+    ]
+
+    mood_cols = st.columns(3)
+
+    for index, (emoji, mood) in enumerate(moods):
+
+        with mood_cols[index % 3]:
+
+            st.markdown(
+                f"""
+                <div class="mood-card">
+
+                    <div style="font-size:32px;">
+                        {emoji}
+                    </div>
+
+                    <b>{mood}</b>
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            if st.button(
+                "Explore",
+                key=f"mood_{index}",
+                use_container_width=True
+            ):
+
+                st.session_state.page = "Discover"
+
+                st.rerun()
+
+    st.markdown(
+        '<div class="section-title">'
+        '✨ A little pick for you'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    recommendation = books.sample(1).iloc[0]
+
+    display_book(
+        recommendation,
+        "home_recommendation"
+    )
+
+
+# ============================================================
+# DISCOVER
+# ============================================================
+
+elif st.session_state.page == "Discover":
+
+    st.markdown(
+        '<div class="section-title">'
+        '🔎 Find your next obsession'
+        '</div>',
+        unsafe_allow_html=True
     )
 
     query = st.text_input(
         "Search",
-        placeholder="Start typing a book or author's name..."
+        placeholder="Search by title or author..."
     )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        genre_options = ["All"]
+
+        if "genre" in books.columns:
+
+            genre_options += sorted(
+                books["genre"]
+                .dropna()
+                .astype(str)
+                .unique()
+                .tolist()
+            )
+
+        selected_genre = st.selectbox(
+            "Genre",
+            genre_options
+        )
+
+    with col2:
+
+        minimum_rating = st.slider(
+            "Minimum rating",
+            0.0,
+            5.0,
+            0.0,
+            0.1
+        )
+
+    filtered = books.copy()
 
     if query:
 
-        results = search_books(query, search_column)
+        mask = (
+            filtered["title"]
+            .astype(str)
+            .str.contains(
+                query,
+                case=False,
+                na=False
+            )
+            |
+            filtered["authors"]
+            .astype(str)
+            .str.contains(
+                query,
+                case=False,
+                na=False
+            )
+        )
 
-        if results.empty:
+        filtered = filtered[mask]
 
-            st.warning(
-                f"No books found for **{query}**."
+    if selected_genre != "All":
+
+        filtered = filtered[
+            filtered["genre"]
+            .astype(str)
+            .str.contains(
+                selected_genre,
+                case=False,
+                na=False
+            )
+        ]
+
+    filtered["rating_numeric"] = pd.to_numeric(
+        filtered["average_ratings"],
+        errors="coerce"
+    )
+
+    filtered = filtered[
+        filtered["rating_numeric"]
+        .fillna(0)
+        >= minimum_rating
+    ]
+
+    st.write(
+        f"**{len(filtered):,} books found**"
+    )
+
+    for index, (_, book) in enumerate(
+        filtered.head(30).iterrows()
+    ):
+
+        display_book(
+            book,
+            f"discover_{index}"
+        )
+
+
+# ============================================================
+# MY BOOKS
+# ============================================================
+
+elif st.session_state.page == "My Books":
+
+    st.markdown(
+        '<div class="section-title">'
+        '📚 My Books'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    shelf_tabs = st.tabs(
+        [
+            "♡ Want to Read",
+            "📖 Currently Reading",
+            "✓ Read"
+        ]
+    )
+
+    shelves = [
+        "Want to Read",
+        "Currently Reading",
+        "Read"
+    ]
+
+    for tab, shelf_name in zip(
+        shelf_tabs,
+        shelves
+    ):
+
+        with tab:
+
+            saved_keys = get_shelf_books(
+                shelf_name
             )
 
-        else:
+            found = False
 
-            st.success(
-                f"Found {len(results)} matching book(s)."
-            )
+            for index, (_, book) in enumerate(
+                books.iterrows()
+            ):
 
-            for index, (_, book) in enumerate(results.iterrows()):
+                if make_key(book) in saved_keys:
 
-                show_book(
-                    book,
-                    button_prefix=f"search_{index}"
+                    found = True
+
+                    display_book(
+                        book,
+                        f"{shelf_name}_{index}"
+                    )
+
+            if not found:
+
+                st.info(
+                    "Nothing here yet. "
+                    "Go discover something beautiful ♡"
                 )
 
 
 # ============================================================
-# RANDOM PAGE
+# BOOK ROOMS
 # ============================================================
 
-elif page == "🎲 Random Pick":
+elif st.session_state.page == "Book Rooms":
 
     st.markdown(
-        '<div class="section-title">Let the bookshelf decide.</div>',
+        '<div class="section-title">'
+        '💬 Book Rooms'
+        '</div>',
         unsafe_allow_html=True
     )
 
     st.write(
-        "Not sure what to read? Pick a book completely at random."
+        "A cozy little corner to talk about books."
     )
 
-    if st.button("✨ Pick a Book", use_container_width=True):
+    selected_title = st.selectbox(
+        "Choose a book",
+        books["title"].dropna().astype(str).unique()
+    )
 
-        st.session_state.random_book = (
-            books_df.sample(1).iloc[0]
-        )
-
-        st.rerun()
-
-    if st.session_state.random_book is not None:
-
-        st.markdown("### Your random pick")
-
-        show_book(
-            st.session_state.random_book,
-            button_prefix="random"
-        )
-
-
-# ============================================================
-# MY LIBRARY
-# ============================================================
-
-elif page == "🔖 My Library":
+    selected = books[
+        books["title"].astype(str)
+        == selected_title
+    ].iloc[0]
 
     st.markdown(
-        '<div class="section-title">My Reading Library</div>',
+        f"""
+        <div class="book-card">
+
+            <div class="book-title">
+                📖 {selected["title"]}
+            </div>
+
+            <div class="book-author">
+                by {selected["authors"]}
+            </div>
+
+            <p>
+                💭 What did you think about this book?
+            </p>
+
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
-    saved_ids = st.session_state.saved_books
+    message = st.text_area(
+        "Share your thoughts",
+        placeholder="This ending completely broke me..."
+    )
 
-    if not saved_ids:
+    if st.button("💌 Post to the room"):
+
+        if message.strip():
+
+            add_discussion(
+                selected,
+                message
+            )
+
+            st.success(
+                "Your thought has been added 💗"
+            )
+
+            st.rerun()
+
+    conn = get_connection()
+
+    discussions = conn.execute(
+        """
+        SELECT username, message, created_at
+        FROM discussions
+        WHERE book_key = ?
+        ORDER BY id DESC
+        """,
+        (make_key(selected),)
+    ).fetchall()
+
+    conn.close()
+
+    for username, message, date in discussions:
+
+        st.markdown(
+            f"""
+            <div class="book-card">
+
+                <b>🌷 {username}</b>
+
+                <p>{message}</p>
+
+                <small>
+                    {date[:10]}
+                </small>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+# ============================================================
+# CHALLENGES
+# ============================================================
+
+elif st.session_state.page == "Challenges":
+
+    st.markdown(
+        '<div class="section-title">'
+        '🎯 Reading Challenges'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    read_books = get_shelf_books("Read")
+
+    completed = len(read_books)
+
+    target = 30
+
+    progress = min(
+        completed / target,
+        1
+    )
+
+    st.markdown(
+        f"""
+        <div class="book-card">
+
+            <h2>
+                🌷 My 2026 Reading Challenge
+            </h2>
+
+            <h1>
+                {completed} / {target}
+            </h1>
+
+            <p>
+                books completed
+            </p>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.progress(progress)
+
+    st.markdown(
+        '<div class="section-title">'
+        '✨ Monthly quests'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    quests = [
+        "Read a book under 200 pages.",
+        "Read a book published before 2000.",
+        "Read a book you've owned for over a year.",
+        "Read a book with a blue cover.",
+        "Read a book outside your usual genre.",
+        "Read a book recommended by a friend."
+    ]
+
+    for quest in quests:
+
+        st.checkbox(
+            quest,
+            key=f"quest_{quest}"
+        )
+
+
+# ============================================================
+# READING WRAPPED
+# ============================================================
+
+elif st.session_state.page == "Reading Wrapped":
+
+    st.markdown(
+        '<div class="section-title">'
+        '📊 Your Reading Wrapped'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    read_keys = get_shelf_books("Read")
+
+    read_books = []
+
+    for _, book in books.iterrows():
+
+        if make_key(book) in read_keys:
+
+            read_books.append(book)
+
+    total_read = len(read_books)
+
+    if total_read == 0:
 
         st.info(
-            "Your library is empty. Search for a book and save it here."
+            "Finish your first book to unlock your reading stats ✨"
         )
 
     else:
 
-        saved_data = []
+        col1, col2, col3 = st.columns(3)
 
-        for identifier in saved_ids:
+        with col1:
 
-            title, author = identifier.split("::", 1)
+            st.markdown(
+                f"""
+                <div class="stat-card">
 
-            match = books_df[
-                (books_df["title"].astype(str) == title) &
-                (books_df["authors"].astype(str) == author)
-            ]
+                    <div class="stat-number">
+                        {total_read}
+                    </div>
 
-            if not match.empty:
-                saved_data.append(match.iloc[0])
+                    <div class="stat-label">
+                        Books Read
+                    </div>
 
-        if saved_data:
-
-            st.write(
-                f"You have saved **{len(saved_data)} book(s)**."
+                </div>
+                """,
+                unsafe_allow_html=True
             )
 
-            for index, book in enumerate(saved_data):
+        ratings = pd.to_numeric(
+            [
+                book["average_ratings"]
+                for book in read_books
+            ],
+            errors="coerce"
+        )
 
-                show_book(
-                    book,
-                    button_prefix=f"library_{index}"
+        average_rating = ratings.mean()
+
+        with col2:
+
+            st.markdown(
+                f"""
+                <div class="stat-card">
+
+                    <div class="stat-number">
+                        {average_rating:.1f}
+                    </div>
+
+                    <div class="stat-label">
+                        Average Rating
+                    </div>
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with col3:
+
+            genres = [
+                str(book["genre"])
+                for book in read_books
+            ]
+
+            favorite_genre = (
+                pd.Series(genres)
+                .value_counts()
+                .index[0]
+            )
+
+            st.markdown(
+                f"""
+                <div class="stat-card">
+
+                    <div class="stat-number">
+                        {favorite_genre}
+                    </div>
+
+                    <div class="stat-label">
+                        Favorite Genre
+                    </div>
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        st.markdown(
+            '<div class="section-title">'
+            '📚 Your reading history'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        genre_counts = pd.Series(
+            [
+                str(book["genre"])
+                for book in read_books
+            ]
+        ).value_counts()
+
+        st.bar_chart(
+            genre_counts
+        )
+
+        st.success(
+            "Apparently, you have excellent taste. "
+            "Or excellent emotional damage. 🥀"
+        )
+
+
+# ============================================================
+# PROFILE
+# ============================================================
+
+elif st.session_state.page == "Profile":
+
+    st.markdown(
+        '<div class="section-title">'
+        '👤 Your Reader Profile'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        """
+        <div class="hero">
+
+            <h1>
+                🌷 The Quiet Reader
+            </h1>
+
+            <p>
+                You like stories that stay with you
+                long after the final page.
+            </p>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        st.metric(
+            "Books saved",
+            len(
+                get_shelf_books(
+                    "Want to Read"
                 )
+            )
+        )
+
+    with col2:
+
+        st.metric(
+            "Currently reading",
+            len(
+                get_shelf_books(
+                    "Currently Reading"
+                )
+            )
+        )
+
+    with col3:
+
+        st.metric(
+            "Books finished",
+            len(
+                get_shelf_books(
+                    "Read"
+                )
+            )
+        )
+
+    st.markdown(
+        '<div class="section-title">'
+        '💭 Your reading vibe'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    st.write(
+        "🌙 Emotional stories"
+    )
+
+    st.write(
+        "☕ Character-driven fiction"
+    )
+
+    st.write(
+        "🥀 Books that hurt a little"
+    )
 
 
 # ============================================================
@@ -538,7 +1387,13 @@ elif page == "🔖 My Library":
 st.markdown(
     """
     <div class="footer">
-        BookNest · Your next story is waiting 📖
+
+        made with 📚 + ☕ + a little emotional damage
+
+        <br><br>
+
+        <b>Bookish</b> · your little reading corner ♡
+
     </div>
     """,
     unsafe_allow_html=True
