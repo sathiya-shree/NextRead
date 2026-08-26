@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.username }} — Shelfie{% endblock %}
+{% block content %}
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="font-display text-2xl font-bold">{{ profile.display_name or profile.username }}</h1>
+    <p class="text-stone-500 text-sm">@{{ profile.username }}</p>
+    {% if profile.bio %}<p class="text-stone-700 text-sm mt-2 max-w-md">{{ profile.bio }}</p>{% endif %}
+    <p class="text-xs text-stone-400 mt-2">{{ followers_count }} followers · {{ following_count }} following</p>
+  </div>
+  {% if current_user and not is_own %}
+    {% if is_following %}
+    <form method="post" action="/u/{{ profile.username }}/unfollow"><button class="text-sm border border-stone-300 rounded-full px-4 py-1.5 hover:bg-stone-100">Following</button></form>
+    {% else %}
+    <form method="post" action="/u/{{ profile.username }}/follow"><button class="text-sm bg-amber-800 text-white rounded-full px-4 py-1.5 hover:bg-amber-900">Follow</button></form>
+    {% endif %}
+  {% endif %}
+</div>
+
+<div class="grid md:grid-cols-3 gap-6 mb-8">
+  {% for status, label in [('reading','Currently reading'), ('want_to_read','Want to read'), ('read','Read')] %}
+  <div>
+    <h3 class="font-semibold text-sm text-stone-500 mb-2">{{ label }} ({{ shelves_by_status[status]|length }})</h3>
+    <div class="space-y-2">
+      {% for row in shelves_by_status[status][:6] %}
+      <a href="/books/{{ row.books.id }}" class="flex items-center gap-2 text-sm hover:text-amber-800">
+        <div class="w-8 aspect-[2/3] bg-stone-200 rounded overflow-hidden flex-shrink-0">
+          {% if row.books.cover_url %}<img src="{{ row.books.cover_url }}" class="w-full h-full object-cover">{% endif %}
+        </div>
+        <span class="line-clamp-2">{{ row.books.title }}</span>
+      </a>
+      {% else %}
+      <p class="text-stone-300 text-xs">Empty</p>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<h2 class="font-display text-xl font-bold mb-3">Reviews</h2>
+<div class="space-y-4">
+  {% for r in reviews %}
+  <div class="border-b border-stone-100 pb-4">
+    <div class="flex justify-between">
+      <a href="/books/{{ r.books and r.book_id }}" class="font-semibold text-sm hover:text-amber-800">{{ r.books.title }}</a>
+      <span class="star">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
+    </div>
+    {% if r.body %}<p class="text-sm text-stone-700 mt-1">{{ r.body }}</p>{% endif %}
+  </div>
+  {% else %}
+  <p class="text-stone-400 text-sm">No reviews yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

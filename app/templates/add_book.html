@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Add a book — Shelfie{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <h1 class="font-display text-2xl font-bold mb-6">Add a book</h1>
+  <form method="post" action="/books/add" class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium mb-1">Title</label>
+      <input type="text" name="title" required class="w-full border border-stone-300 rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Author</label>
+      <input type="text" name="author" required class="w-full border border-stone-300 rounded px-3 py-2">
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Genre</label>
+        <input type="text" name="genre" class="w-full border border-stone-300 rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Published year</label>
+        <input type="number" name="published_year" class="w-full border border-stone-300 rounded px-3 py-2">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Page count</label>
+      <input type="number" name="page_count" class="w-full border border-stone-300 rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Cover image URL</label>
+      <input type="url" name="cover_url" placeholder="https://..." class="w-full border border-stone-300 rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Description</label>
+      <textarea name="description" rows="4" class="w-full border border-stone-300 rounded px-3 py-2"></textarea>
+    </div>
+    <button class="w-full bg-amber-800 text-white rounded py-2 font-medium hover:bg-amber-900">Add book</button>
+  </form>
+</div>
+{% endblock %}

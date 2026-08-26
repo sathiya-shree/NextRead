@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Start a club — Shelfie{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <h1 class="font-display text-2xl font-bold mb-6">Start a book club</h1>
+  <form method="post" action="/clubs/new" class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium mb-1">Club name</label>
+      <input type="text" name="name" required class="w-full border border-stone-300 rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Description</label>
+      <textarea name="description" rows="3" class="w-full border border-stone-300 rounded px-3 py-2"></textarea>
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="is_private" value="true"> Private club (invite only)
+    </label>
+    <button class="w-full bg-amber-800 text-white rounded py-2 font-medium hover:bg-amber-900">Create club</button>
+  </form>
+</div>
+{% endblock %}

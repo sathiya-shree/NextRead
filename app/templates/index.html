@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Shelfie — Home{% endblock %}
+{% block content %}
+<div class="grid md:grid-cols-3 gap-8">
+  <div class="md:col-span-2">
+    <h1 class="font-display text-2xl font-bold mb-4">{% if q %}Results for "{{ q }}"{% else %}Recently added books{% endif %}</h1>
+    {% if not books %}
+      <p class="text-stone-500">No books found. <a href="/books/add" class="text-amber-800 underline">Add one</a>?</p>
+    {% endif %}
+    <div class="grid sm:grid-cols-3 gap-5">
+      {% for book in books %}
+      <a href="/books/{{ book.id }}" class="block group">
+        <div class="aspect-[2/3] bg-stone-200 rounded-lg overflow-hidden mb-2 shadow-sm group-hover:shadow-md transition">
+          {% if book.cover_url %}
+            <img src="{{ book.cover_url }}" class="w-full h-full object-cover" alt="">
+          {% else %}
+            <div class="w-full h-full flex items-center justify-center text-3xl">📖</div>
+          {% endif %}
+        </div>
+        <div class="text-sm font-semibold leading-snug group-hover:text-amber-800">{{ book.title }}</div>
+        <div class="text-xs text-stone-500">{{ book.author }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <h2 class="font-display text-xl font-bold mb-4">Activity</h2>
+    <div class="space-y-4">
+      {% for r in recent_reviews %}
+      <div class="bg-white border border-stone-200 rounded-lg p-3 text-sm">
+        <div class="flex justify-between items-start mb-1">
+          <a href="/u/{{ r.profiles.username }}" class="font-semibold hover:text-amber-800">{{ r.profiles.username }}</a>
+          <span class="star">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
+        </div>
+        <a href="/books/{{ r.books and r.book_id }}" class="text-stone-600 text-xs">reviewed <span class="italic">{{ r.books.title }}</span> by {{ r.books.author }}</a>
+        {% if r.body %}<p class="text-stone-700 mt-1 line-clamp-3">{{ r.body }}</p>{% endif %}
+      </div>
+      {% else %}
+      <p class="text-stone-400 text-sm">No activity yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

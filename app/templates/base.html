@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Shelfie{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Fraunces', serif; }
+    .star { color: #d97706; }
+  </style>
+</head>
+<body class="bg-stone-50 text-stone-900 min-h-screen flex flex-col">
+  <nav class="border-b border-stone-200 bg-white sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="font-display text-2xl font-bold text-amber-800">📚 Shelfie</a>
+      <form action="/" method="get" class="hidden sm:block flex-1 max-w-sm mx-6">
+        <input type="text" name="q" placeholder="Search books or authors..."
+               class="w-full border border-stone-300 rounded-full px-4 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-600">
+      </form>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="/clubs" class="hover:text-amber-800">Clubs</a>
+        {% if current_user %}
+          <a href="/books/add" class="hover:text-amber-800">+ Add Book</a>
+          <a href="/u/{{ current_user.username }}" class="hover:text-amber-800 font-medium">{{ current_user.username }}</a>
+          <a href="/logout" class="text-stone-500 hover:text-stone-800">Log out</a>
+        {% else %}
+          <a href="/login" class="hover:text-amber-800">Log in</a>
+          <a href="/signup" class="bg-amber-800 text-white px-3 py-1.5 rounded-full hover:bg-amber-900">Sign up</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-4 py-8 flex-1 w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-stone-200 py-6 text-center text-xs text-stone-400">
+    Shelfie — track what you read, discuss it with your club.
+  </footer>
+</body>
+</html>
