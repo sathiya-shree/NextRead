@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
-from app.db import public_client
+from app.db import public_client, client_for_user
 from app.templating import render
 
 router = APIRouter()
@@ -52,7 +52,10 @@ def signup(
                 "user_id": result.user.id,
             }
             try:
-                public_client.table("profiles").update(
+                # Must use a client authenticated as this user — RLS blocks
+                # the update otherwise, which silently left usernames unset.
+                authed_client = client_for_user(result.session.access_token)
+                authed_client.table("profiles").update(
                     {"username": username, "display_name": username}
                 ).eq("id", result.user.id).execute()
             except Exception:

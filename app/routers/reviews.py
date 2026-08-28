@@ -1,8 +1,56 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
+from app.db import public_client
 from app.auth import get_current_user, get_user_client
+from app.templating import render
 
 router = APIRouter()
+
+
+@router.get("/reviews")
+def reviews_page(request: Request, q: str = "", user: str = ""):
+    """A dedicated, searchable feed of reviews — either site-wide or, when
+    ?user=username is set (linked from a profile page), just that person's."""
+    query = (
+        public_client.table("reviews")
+        .select("*, profiles!reviews_user_id_fkey(username,avatar_url), books(id,title,author,cover_url)")
+        .order("created_at", desc=True)
+        .limit(300)
+    )
+
+    filter_profile = None
+    if user:
+        target = (
+            public_client.table("profiles").select("*").eq("username", user).limit(1).execute().data
+        )
+        filter_profile = target[0] if target else None
+        if filter_profile:
+            query = query.eq("user_id", filter_profile["id"])
+        else:
+            # unknown username — show nothing rather than error
+            query = query.eq("user_id", "00000000-0000-0000-0000-000000000000")
+
+    all_reviews = query.execute().data
+
+    if q:
+        ql = q.lower()
+        all_reviews = [
+            r
+            for r in all_reviews
+            if ql in (r.get("body") or "").lower()
+            or ql in ((r.get("books") or {}).get("title") or "").lower()
+            or ql in ((r.get("books") or {}).get("author") or "").lower()
+            or ql in ((r.get("profiles") or {}).get("username") or "").lower()
+        ]
+
+    return render(
+        request,
+        "reviews.html",
+        reviews=all_reviews,
+        q=q,
+        filter_user=user,
+        filter_profile=filter_profile,
+    )
 
 
 @router.post("/books/{book_id}/review")

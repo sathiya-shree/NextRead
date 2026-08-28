@@ -33,7 +33,7 @@ def home(request: Request, q: str = ""):
     # Recent reviews from anyone, newest first, for the activity feed
     recent_reviews = (
         public_client.table("reviews")
-        .select("*, profiles(username,avatar_url), books(title,author,cover_url)")
+        .select("*, profiles!reviews_user_id_fkey(username,avatar_url), books(title,author,cover_url)")
         .order("created_at", desc=True)
         .limit(10)
         .execute()
@@ -52,6 +52,17 @@ def add_book_page(request: Request):
     return render(request, "add_book.html")
 
 
+def _to_int(value: str) -> int | None:
+    """Blank number inputs arrive as '' — coerce safely instead of 500ing."""
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
 @router.post("/books/add")
 def add_book(
     request: Request,
@@ -59,8 +70,8 @@ def add_book(
     author: str = Form(...),
     description: str = Form(""),
     genre: str = Form(""),
-    page_count: int = Form(0),
-    published_year: int = Form(0),
+    page_count: str = Form(""),
+    published_year: str = Form(""),
     cover_url: str = Form(""),
 ):
     user = get_current_user(request)
@@ -74,10 +85,10 @@ def add_book(
             {
                 "title": title,
                 "author": author,
-                "description": description,
-                "genre": genre,
-                "page_count": page_count or None,
-                "published_year": published_year or None,
+                "description": description or None,
+                "genre": genre or None,
+                "page_count": _to_int(page_count),
+                "published_year": _to_int(published_year),
                 "cover_url": cover_url or None,
                 "added_by": user["id"],
             }
@@ -95,7 +106,7 @@ def book_detail(request: Request, book_id: str):
     book = public_client.table("books").select("*").eq("id", book_id).single().execute().data
     reviews = (
         public_client.table("reviews")
-        .select("*, profiles(username,avatar_url)")
+        .select("*, profiles!reviews_user_id_fkey(username,avatar_url)")
         .eq("book_id", book_id)
         .order("created_at", desc=True)
         .execute()
@@ -104,6 +115,8 @@ def book_detail(request: Request, book_id: str):
 
     my_shelf = None
     my_review = None
+    my_lists = []
+    lists_with_book = set()
     if user:
         client = get_user_client(request)
         shelf_res = (
@@ -125,6 +138,26 @@ def book_detail(request: Request, book_id: str):
         )
         my_review = review_res[0] if review_res else None
 
+        my_lists = (
+            client.table("custom_lists")
+            .select("*")
+            .eq("user_id", user["id"])
+            .order("created_at", desc=True)
+            .execute()
+            .data
+        )
+        if my_lists:
+            list_ids = [l["id"] for l in my_lists]
+            membership = (
+                client.table("list_books")
+                .select("list_id")
+                .eq("book_id", book_id)
+                .in_("list_id", list_ids)
+                .execute()
+                .data
+            )
+            lists_with_book = {m["list_id"] for m in membership}
+
     avg_rating = None
     ratings = [r["rating"] for r in reviews if r.get("rating")]
     if ratings:
@@ -139,4 +172,6 @@ def book_detail(request: Request, book_id: str):
         my_review=my_review,
         avg_rating=avg_rating,
         rating_count=len(ratings),
+        my_lists=my_lists,
+        lists_with_book=lists_with_book,
     )

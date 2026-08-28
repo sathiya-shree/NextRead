@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Import complete — Shelfie{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto text-center">
+  <p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2">Accession complete</p>
+  <h1 class="font-display text-3xl text-paper mb-8">Your library is in</h1>
+
+  <div class="card-index rounded-sm p-6 grid grid-cols-2 gap-5 text-left mb-6">
+    <div>
+      <p class="font-display text-3xl text-ink">{{ shelved }}</p>
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40">Books shelved</p>
+    </div>
+    <div>
+      <p class="font-display text-3xl text-ink">{{ added_books }}</p>
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40">New to catalog</p>
+    </div>
+    <div>
+      <p class="font-display text-3xl text-ink">{{ matched_existing }}</p>
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40">Already catalogued</p>
+    </div>
+    <div>
+      <p class="font-display text-3xl text-ink">{{ reviewed }}</p>
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40">Ratings imported</p>
+    </div>
+  </div>
+
+  {% if skipped %}
+  <div class="card-index rounded-sm p-4 text-left mb-6">
+    <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">Skipped ({{ skipped|length }})</p>
+    <ul class="text-sm text-ink/60 space-y-0.5 max-h-40 overflow-y-auto">
+      {% for title in skipped %}<li>{{ title }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <a href="/" class="inline-block bg-gold text-ink font-semibold px-5 py-2.5 rounded-full text-sm hover:bg-gold-dark transition">Go to your shelf</a>
+</div>
+{% endblock %}

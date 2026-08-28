@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{% if filter_profile %}{{ filter_profile.username }}'s reviews{% else %}Reviews{% endif %} — Shelfie{% endblock %}
+{% block content %}
+<p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2">Reading room</p>
+<h1 class="font-display text-3xl text-paper mb-2">
+  {% if filter_profile %}Reviews by {{ filter_profile.username }}{% else %}All reviews{% endif %}
+</h1>
+{% if filter_profile %}<a href="/reviews" class="text-sm text-gold hover:text-gold-dark transition">&larr; See everyone's reviews</a>{% endif %}
+
+<form method="get" action="/reviews" class="max-w-md mt-6 mb-8">
+  {% if filter_user %}<input type="hidden" name="user" value="{{ filter_user }}">{% endif %}
+  <div class="relative">
+    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40 text-sm">⌕</span>
+    <input type="text" name="q" value="{{ q }}" placeholder="Search reviews, books, authors, reviewers..."
+           class="w-full bg-paper/10 border border-paper/15 rounded-full pl-9 pr-4 py-2 text-sm text-paper placeholder:text-paper/40 focus:outline-none focus:ring-1 focus:ring-gold">
+  </div>
+</form>
+
+<div class="grid sm:grid-cols-2 gap-4">
+  {% for r in reviews %}
+  <div class="card-index rounded-sm p-4">
+    <div class="flex justify-between items-start mb-2">
+      <a href="/u/{{ r.profiles.username }}" class="font-semibold text-sm text-ink hover:text-gold-dark transition">{{ r.profiles.username }}</a>
+      <span class="star">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
+    </div>
+    <a href="/books/{{ r.books.id }}" class="flex items-center gap-2 mb-2 group">
+      <div class="w-6 h-9 bg-paper-dim rounded-sm overflow-hidden flex-shrink-0">
+        {% if r.books.cover_url %}<img src="{{ r.books.cover_url }}" class="w-full h-full object-cover">{% endif %}
+      </div>
+      <span class="text-xs text-ink/60 group-hover:text-gold-dark transition"><span class="italic">{{ r.books.title }}</span> — {{ r.books.author }}</span>
+    </a>
+    {% if r.spoiler %}
+      <details class="text-sm"><summary class="cursor-pointer text-ink/40">Contains spoilers — click to reveal</summary><p class="mt-1 text-ink/80">{{ r.body }}</p></details>
+    {% elif r.body %}
+      <p class="text-sm text-ink/80">{{ r.body }}</p>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="text-paper/30 text-sm col-span-full">{% if q %}No reviews match "{{ q }}".{% else %}No reviews yet.{% endif %}</p>
+  {% endfor %}
+</div>
+{% endblock %}

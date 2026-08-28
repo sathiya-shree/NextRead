@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Import your library — Shelfie{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2 text-center">Bulk accession</p>
+  <h1 class="font-display text-3xl text-paper text-center mb-6">Import your library</h1>
+
+  <div class="card-index rounded-sm p-6 mb-6">
+    <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">From Goodreads</p>
+    <ol class="text-sm text-ink/70 list-decimal list-inside space-y-1 mb-4">
+      <li>On goodreads.com (desktop site — the export isn't in the mobile app), go to <span class="text-ink font-medium">My Books</span></li>
+      <li>In the left sidebar under Tools, click <span class="text-ink font-medium">Import and Export</span></li>
+      <li>Click <span class="text-ink font-medium">Export Library</span> and download the CSV once it's ready</li>
+    </ol>
+    <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">From Fable</p>
+    <p class="text-sm text-ink/70 mb-4">Fable doesn't have an official export feature yet. The community-built
+      <span class="text-ink font-medium">Fable Xport</span> Chrome extension can export your Fable library as a
+      Goodreads-format CSV — run that first, then upload the file it gives you below. (It's an unofficial
+      third-party tool, not run by Fable or Shelfie, so use your own judgment.)</p>
+
+    <form method="post" action="/import/goodreads" enctype="multipart/form-data" class="space-y-3">
+      <input type="file" name="file" accept=".csv" required
+             class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-sm text-ink file:mr-3 file:py-1.5 file:px-3 file:rounded-sm file:border-0 file:bg-gold file:text-ink file:font-semibold file:cursor-pointer">
+      <button class="w-full bg-ink text-paper font-semibold rounded-sm py-2.5 hover:bg-gold hover:text-ink transition">Import CSV</button>
+    </form>
+  </div>
+
+  <p class="text-xs text-paper/40 text-center mb-8">Matches books already in Shelfie's catalog by title + author,
+    so you won't get duplicates if someone already added the same book.</p>
+
+  {% if covers_updated is not none %}
+  <div class="card-index rounded-sm p-4 mb-6 text-center">
+    <p class="text-ink text-sm">Filled in <span class="font-semibold">{{ covers_updated }}</span> missing cover{{ 's' if covers_updated != 1 }}.</p>
+  </div>
+  {% endif %}
+  {% if error %}<p class="bg-rust/10 text-rust text-sm p-3 rounded-sm mb-4 border border-rust/30">{{ error }}</p>{% endif %}
+
+  <div class="card-index rounded-sm p-6 text-center">
+    <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">Already imported without covers?</p>
+    <p class="text-sm text-ink/60 mb-3">Goodreads exports don't include cover images. This fills in artwork for
+      any catalog book that has an ISBN but no cover — free, no re-upload needed.</p>
+    <form method="post" action="/tools/backfill-covers">
+      <button class="bg-gold text-ink font-semibold px-4 py-2 rounded-full text-sm hover:bg-gold-dark transition">Fill in missing covers</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

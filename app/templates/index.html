@@ -1,43 +1,149 @@
 {% extends "base.html" %}
 {% block title %}Shelfie — Home{% endblock %}
 {% block content %}
-<div class="grid md:grid-cols-3 gap-8">
+
+{% if not q %}
+<div class="mb-14 grid md:grid-cols-5 gap-8 items-end">
+  <div class="md:col-span-3">
+    <p class="font-stamp text-xs text-gold uppercase tracking-widest mb-3">No. 1 in circulation</p>
+    <h1 class="font-display text-5xl leading-tight text-paper mb-4">Every book<br>you've read is<br>a stamp on a card.</h1>
+    <p class="text-paper/60 max-w-md">Shelve what you're reading, rate what you've finished, and argue about
+      chapter twelve with people who get it. Shelfie is a library card catalog for your actual life.</p>
+    <div class="flex gap-3 mt-6">
+      {% if not current_user %}
+      <a href="/signup" class="bg-gold text-ink px-5 py-2.5 rounded-full font-semibold text-sm hover:bg-gold-dark transition">Start your shelf</a>
+      {% endif %}
+      <a href="/clubs" class="border border-paper/20 text-paper px-5 py-2.5 rounded-full font-semibold text-sm hover:border-gold hover:text-gold transition">Browse clubs</a>
+    </div>
+  </div>
   <div class="md:col-span-2">
-    <h1 class="font-display text-2xl font-bold mb-4">{% if q %}Results for "{{ q }}"{% else %}Recently added books{% endif %}</h1>
+    <div class="card-index rounded-sm px-6 py-5 text-ink -rotate-1 max-w-xs ml-auto">
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-3">Date due — return by chapter's end</p>
+      {% for r in recent_reviews[:3] %}
+      <div class="flex justify-between items-baseline border-b border-ink/10 py-1.5 text-sm">
+        <span class="font-display italic truncate mr-2">{{ r.books.title }}</span>
+        <span class="font-stamp text-[11px] text-gold-dark">{{ "★" * r.rating }}</span>
+      </div>
+      {% else %}
+      <p class="text-ink/40 text-sm">No stamps yet — be the first.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="mb-14">
+  <p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2">Reader's advisory</p>
+  <h2 class="font-display text-2xl text-paper mb-4">What are you in the mood for?</h2>
+  <div class="flex flex-wrap gap-2 mb-6" id="mood-chips">
+    {% for mood, label in [('cozy','Cozy'), ('thrilling','Thrilling'), ('heartbreaking','Heartbreaking'),
+                             ('funny','Funny'), ('mind-bending','Mind-bending'), ('romantic','Romantic'),
+                             ('spooky','Spooky'), ('inspiring','Inspiring')] %}
+    <button type="button" data-mood="{{ mood }}" class="mood-chip stamp text-ink/60 bg-paper border-ink/15 hover:border-gold hover:text-gold-dark transition">{{ label }}</button>
+    {% endfor %}
+  </div>
+  <div id="mood-results" class="grid sm:grid-cols-3 md:grid-cols-4 gap-4 hidden"></div>
+  <p id="mood-loading" class="text-paper/40 text-sm hidden">Pulling recommendations...</p>
+</div>
+
+<script>
+(function() {
+  const chips = document.querySelectorAll('.mood-chip');
+  const resultsBox = document.getElementById('mood-results');
+  const loading = document.getElementById('mood-loading');
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', async () => {
+      chips.forEach(c => c.classList.remove('bg-ink', 'text-paper', 'border-ink'));
+      chip.classList.add('bg-ink', 'text-paper', 'border-ink');
+      resultsBox.classList.add('hidden');
+      loading.classList.remove('hidden');
+      try {
+        const res = await fetch('/api/mood-search?mood=' + encodeURIComponent(chip.dataset.mood));
+        const data = await res.json();
+        if (data.error) { console.error('mood-search error:', data.error); }
+        renderResults(data.results || []);
+      } catch (e) {
+        loading.textContent = "Couldn't load recommendations right now.";
+        console.error(e);
+      }
+    });
+  });
+
+  function renderResults(results) {
+    loading.classList.add('hidden');
+    if (!results.length) {
+      resultsBox.innerHTML = '<p class="text-paper/40 text-sm col-span-full">No matches — try another mood.</p>';
+      resultsBox.classList.remove('hidden');
+      return;
+    }
+    resultsBox.innerHTML = results.map(r => `
+      <div class="card-index rounded-sm p-3">
+        <div class="aspect-[2/3] bg-paper-dim rounded-sm overflow-hidden mb-2">
+          ${r.cover_url ? `<img src="${r.cover_url}" class="w-full h-full object-cover">` : ''}
+        </div>
+        <p class="text-sm font-semibold text-ink leading-snug">${escapeHtml(r.title)}</p>
+        <p class="font-stamp text-xs text-ink/40 mb-2">${escapeHtml(r.author)}</p>
+        <form method="post" action="/books/add" class="quick-add">
+          <input type="hidden" name="title" value="${escapeAttr(r.title)}">
+          <input type="hidden" name="author" value="${escapeAttr(r.author)}">
+          <input type="hidden" name="cover_url" value="${escapeAttr(r.cover_url)}">
+          <input type="hidden" name="description" value="${escapeAttr(r.description)}">
+          <input type="hidden" name="genre" value="${escapeAttr(r.genre)}">
+          <input type="hidden" name="published_year" value="${escapeAttr(r.published_year)}">
+          <input type="hidden" name="page_count" value="${escapeAttr(r.page_count)}">
+          <button type="submit" class="font-stamp text-[10px] uppercase tracking-widest text-gold-dark hover:text-ink">+ Add to catalog</button>
+        </form>
+      </div>
+    `).join('');
+    resultsBox.classList.remove('hidden');
+  }
+
+  function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+  function escapeAttr(s) { return (s || '').toString().replace(/"/g, '&quot;'); }
+})();
+</script>
+
+<div class="grid md:grid-cols-3 gap-10">
+  <div class="md:col-span-2">
+    <div class="flex items-baseline justify-between mb-5">
+      <h2 class="font-display text-2xl text-paper">{% if q %}Results for "{{ q }}"{% else %}Recently catalogued{% endif %}</h2>
+      {% if current_user and not q %}<a href="/books/add" class="font-stamp text-xs text-gold hover:text-gold-dark uppercase tracking-wide">+ Add a book</a>{% endif %}
+    </div>
     {% if not books %}
-      <p class="text-stone-500">No books found. <a href="/books/add" class="text-amber-800 underline">Add one</a>?</p>
+      <p class="text-paper/40">Nothing here yet. <a href="/books/add" class="text-gold underline">Add the first book</a>?</p>
     {% endif %}
     <div class="grid sm:grid-cols-3 gap-5">
       {% for book in books %}
       <a href="/books/{{ book.id }}" class="block group">
-        <div class="aspect-[2/3] bg-stone-200 rounded-lg overflow-hidden mb-2 shadow-sm group-hover:shadow-md transition">
+        <div class="card-index rounded-sm aspect-[2/3] overflow-hidden mb-2.5 group-hover:-translate-y-1 transition-transform">
           {% if book.cover_url %}
             <img src="{{ book.cover_url }}" class="w-full h-full object-cover" alt="">
           {% else %}
-            <div class="w-full h-full flex items-center justify-center text-3xl">📖</div>
+            <div class="w-full h-full flex items-center justify-center text-3xl text-ink/20 pt-3">📖</div>
           {% endif %}
         </div>
-        <div class="text-sm font-semibold leading-snug group-hover:text-amber-800">{{ book.title }}</div>
-        <div class="text-xs text-stone-500">{{ book.author }}</div>
+        <div class="text-sm font-semibold leading-snug text-paper group-hover:text-gold transition">{{ book.title }}</div>
+        <div class="text-xs text-paper/40 font-stamp">{{ book.author }}</div>
       </a>
       {% endfor %}
     </div>
   </div>
 
   <div>
-    <h2 class="font-display text-xl font-bold mb-4">Activity</h2>
-    <div class="space-y-4">
+    <h2 class="font-display text-2xl text-paper mb-5">On the shelf</h2>
+    <div class="space-y-3">
       {% for r in recent_reviews %}
-      <div class="bg-white border border-stone-200 rounded-lg p-3 text-sm">
+      <div class="card-index rounded-sm p-3.5 text-sm text-ink">
         <div class="flex justify-between items-start mb-1">
-          <a href="/u/{{ r.profiles.username }}" class="font-semibold hover:text-amber-800">{{ r.profiles.username }}</a>
-          <span class="star">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
+          <a href="/u/{{ r.profiles.username }}" class="font-semibold hover:text-gold-dark transition">{{ r.profiles.username }}</a>
+          <span class="star text-xs">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
         </div>
-        <a href="/books/{{ r.books and r.book_id }}" class="text-stone-600 text-xs">reviewed <span class="italic">{{ r.books.title }}</span> by {{ r.books.author }}</a>
-        {% if r.body %}<p class="text-stone-700 mt-1 line-clamp-3">{{ r.body }}</p>{% endif %}
+        <a href="/books/{{ r.books and r.book_id }}" class="text-ink/60 text-xs">stamped <span class="italic">{{ r.books.title }}</span> — {{ r.books.author }}</a>
+        {% if r.body %}<p class="text-ink/80 mt-1.5 line-clamp-3">{{ r.body }}</p>{% endif %}
       </div>
       {% else %}
-      <p class="text-stone-400 text-sm">No activity yet.</p>
+      <p class="text-paper/30 text-sm">No activity yet.</p>
       {% endfor %}
     </div>
   </div>

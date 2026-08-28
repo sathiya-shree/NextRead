@@ -1,36 +1,36 @@
 {% extends "base.html" %}
 {% block title %}{{ discussion.title }} — Shelfie{% endblock %}
 {% block content %}
-<a href="/clubs/{{ discussion.clubs.id }}" class="text-sm text-amber-800 hover:underline">&larr; {{ discussion.clubs.name }}</a>
-<h1 class="font-display text-2xl font-bold mt-2">{{ discussion.title }}</h1>
-<p class="text-sm text-stone-400 mb-4">by {{ discussion.profiles.username }}{% if discussion.page_marker %} · up to page {{ discussion.page_marker }}{% endif %}{% if discussion.spoiler %} · <span class="text-red-500">contains spoilers</span>{% endif %}</p>
+<a href="/clubs/{{ discussion.clubs.id }}" class="text-sm text-gold hover:text-gold-dark transition">&larr; {{ discussion.clubs.name }}</a>
+<h1 class="font-display text-3xl text-paper mt-3">{{ discussion.title }}</h1>
+<p class="font-stamp text-xs text-paper/40 uppercase tracking-widest mb-5">by {{ discussion.profiles.username }}{% if discussion.page_marker %} · up to page {{ discussion.page_marker }}{% endif %}{% if discussion.spoiler %} · <span class="text-rust">contains spoilers</span>{% endif %}</p>
 
 {% if discussion.body %}
 {% if discussion.spoiler %}
-<details class="bg-white border border-stone-200 rounded-lg p-4 mb-6"><summary class="cursor-pointer text-stone-500 text-sm">Contains spoilers — click to reveal</summary><p class="mt-2 text-stone-700">{{ discussion.body }}</p></details>
+<details class="card-index rounded-sm p-4 mb-8"><summary class="cursor-pointer text-ink/50 text-sm">Contains spoilers — click to reveal</summary><p class="mt-2 text-ink/80">{{ discussion.body }}</p></details>
 {% else %}
-<p class="bg-white border border-stone-200 rounded-lg p-4 mb-6 text-stone-700">{{ discussion.body }}</p>
+<p class="card-index rounded-sm p-4 mb-8 text-ink/80">{{ discussion.body }}</p>
 {% endif %}
 {% endif %}
 
-<h3 class="font-semibold mb-3">Replies</h3>
+<h3 class="font-display text-lg text-paper mb-4">Replies</h3>
 <div class="space-y-3 mb-6">
   {% for c in comments %}
-  <div class="border-b border-stone-100 pb-3">
-    <a href="/u/{{ c.profiles.username }}" class="font-semibold text-sm hover:text-amber-800">{{ c.profiles.username }}</a>
-    <p class="text-sm text-stone-700 mt-1">{{ c.body }}</p>
+  <div class="card-index rounded-sm p-3.5">
+    <a href="/u/{{ c.profiles.username }}" class="font-semibold text-sm text-ink hover:text-gold-dark transition">{{ c.profiles.username }}</a>
+    <p class="text-sm text-ink/80 mt-1">{{ c.body }}</p>
   </div>
   {% else %}
-  <p class="text-stone-400 text-sm">No replies yet.</p>
+  <p class="text-paper/30 text-sm">No replies yet.</p>
   {% endfor %}
 </div>
 
 {% if current_user %}
 <form method="post" action="/discussions/{{ discussion.id }}/comment" class="flex gap-2">
-  <input type="text" name="body" required placeholder="Add a reply..." class="flex-1 border border-stone-300 rounded px-3 py-2 text-sm">
-  <button class="bg-amber-800 text-white rounded px-4 py-2 text-sm font-medium hover:bg-amber-900">Reply</button>
+  <input type="text" name="body" required placeholder="Add a reply..." class="flex-1 bg-paper border border-ink/10 rounded-sm px-3 py-2 text-sm text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-gold">
+  <button class="bg-gold text-ink font-semibold rounded-sm px-4 py-2 text-sm hover:bg-gold-dark transition">Reply</button>
 </form>
 {% else %}
-<a href="/login" class="text-amber-800 underline text-sm">Log in to reply</a>
+<a href="/login" class="text-gold underline text-sm">Log in to reply</a>
 {% endif %}
 {% endblock %}

@@ -11,11 +11,22 @@ router = APIRouter()
 def clubs_list(request: Request):
     clubs = (
         public_client.table("clubs")
-        .select("*, club_members(count)")
+        .select("*")
         .order("created_at", desc=True)
         .execute()
         .data
     )
+
+    # Count members per club in Python rather than relying on a PostgREST
+    # aggregate embed (club_members(count)), which is fragile across
+    # Supabase/PostgREST versions and was causing this page to 500.
+    member_rows = public_client.table("club_members").select("club_id").execute().data
+    counts = {}
+    for row in member_rows:
+        counts[row["club_id"]] = counts.get(row["club_id"], 0) + 1
+    for c in clubs:
+        c["member_count"] = counts.get(c["id"], 0)
+
     return render(request, "clubs.html", clubs=clubs)
 
 

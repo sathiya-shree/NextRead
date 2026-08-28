@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Find readers — Shelfie{% endblock %}
+{% block content %}
+<p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2">Membership roster</p>
+<h1 class="font-display text-3xl text-paper mb-6">Find readers</h1>
+
+<form action="/people" method="get" class="max-w-sm mb-8">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search by username..."
+         class="w-full bg-paper/10 border border-paper/15 rounded-full px-4 py-2 text-sm text-paper placeholder:text-paper/40 focus:outline-none focus:ring-1 focus:ring-gold">
+</form>
+
+<div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+  {% for p in people %}
+  <div class="card-index rounded-sm p-4 flex items-center justify-between gap-3">
+    <a href="/u/{{ p.username }}" class="flex items-center gap-3 min-w-0">
+      <span class="w-10 h-10 rounded-full bg-gold text-ink flex items-center justify-center font-stamp font-bold shrink-0">
+        {{ p.username[0]|upper }}
+      </span>
+      <div class="min-w-0">
+        <p class="font-semibold text-ink truncate">{{ p.display_name or p.username }}</p>
+        <p class="font-stamp text-xs text-ink/40 truncate">@{{ p.username }}</p>
+      </div>
+    </a>
+    {% if viewer and viewer.id != p.id %}
+      {% if p.id in following_ids %}
+      <form method="post" action="/u/{{ p.username }}/unfollow"><button class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 hover:text-rust shrink-0">Following</button></form>
+      {% else %}
+      <form method="post" action="/u/{{ p.username }}/follow"><button class="font-stamp text-[10px] uppercase tracking-widest text-gold-dark hover:text-ink shrink-0">+ Follow</button></form>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="text-paper/30 text-sm">No readers found.</p>
+  {% endfor %}
+</div>
+{% endblock %}

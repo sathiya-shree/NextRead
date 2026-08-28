@@ -2,39 +2,133 @@
 {% block title %}Add a book — Shelfie{% endblock %}
 {% block content %}
 <div class="max-w-lg mx-auto">
-  <h1 class="font-display text-2xl font-bold mb-6">Add a book</h1>
-  <form method="post" action="/books/add" class="space-y-4">
-    <div>
-      <label class="block text-sm font-medium mb-1">Title</label>
-      <input type="text" name="title" required class="w-full border border-stone-300 rounded px-3 py-2">
+  <p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2 text-center">New accession</p>
+  <h1 class="font-display text-3xl text-paper text-center mb-6">Add a book to the catalog</h1>
+
+  <div class="card-index rounded-sm p-6">
+    <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">Search first</p>
+    <div class="relative mb-1">
+      <input type="text" id="book-search" placeholder="Start typing a title or author..."
+             class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-gold"
+             autocomplete="off">
+      <div id="search-results" class="absolute left-0 right-0 mt-1 bg-paper border border-ink/15 rounded-sm shadow-lg max-h-80 overflow-y-auto z-10 hidden"></div>
     </div>
-    <div>
-      <label class="block text-sm font-medium mb-1">Author</label>
-      <input type="text" name="author" required class="w-full border border-stone-300 rounded px-3 py-2">
-    </div>
-    <div class="grid grid-cols-2 gap-4">
+    <p class="text-xs text-ink/40 mb-5">Results come from Google Books. Pick one to fill the form below, or skip straight to entering details manually if it's not listed.</p>
+
+    <form method="post" action="/books/add" class="space-y-4" id="book-form">
       <div>
-        <label class="block text-sm font-medium mb-1">Genre</label>
-        <input type="text" name="genre" class="w-full border border-stone-300 rounded px-3 py-2">
+        <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Title</label>
+        <input type="text" name="title" id="f-title" required class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink focus:outline-none focus:ring-1 focus:ring-gold">
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">Published year</label>
-        <input type="number" name="published_year" class="w-full border border-stone-300 rounded px-3 py-2">
+        <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Author</label>
+        <input type="text" name="author" id="f-author" required class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink focus:outline-none focus:ring-1 focus:ring-gold">
       </div>
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1">Page count</label>
-      <input type="number" name="page_count" class="w-full border border-stone-300 rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1">Cover image URL</label>
-      <input type="url" name="cover_url" placeholder="https://..." class="w-full border border-stone-300 rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1">Description</label>
-      <textarea name="description" rows="4" class="w-full border border-stone-300 rounded px-3 py-2"></textarea>
-    </div>
-    <button class="w-full bg-amber-800 text-white rounded py-2 font-medium hover:bg-amber-900">Add book</button>
-  </form>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Genre</label>
+          <input type="text" name="genre" id="f-genre" class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+        </div>
+        <div>
+          <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Published year</label>
+          <input type="number" name="published_year" id="f-year" class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Page count</label>
+        <input type="number" name="page_count" id="f-pages" class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+      </div>
+      <div>
+        <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Cover image URL</label>
+        <input type="url" name="cover_url" id="f-cover" placeholder="https://..." class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+      </div>
+      <div>
+        <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Description</label>
+        <textarea name="description" id="f-desc" rows="4" class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink focus:outline-none focus:ring-1 focus:ring-gold"></textarea>
+      </div>
+      <button class="w-full bg-ink text-paper font-semibold rounded-sm py-2.5 hover:bg-gold hover:text-ink transition">Add book</button>
+    </form>
+  </div>
 </div>
+
+<script>
+(function() {
+  const searchInput = document.getElementById('book-search');
+  const resultsBox = document.getElementById('search-results');
+  const fields = {
+    title: document.getElementById('f-title'),
+    author: document.getElementById('f-author'),
+    genre: document.getElementById('f-genre'),
+    published_year: document.getElementById('f-year'),
+    page_count: document.getElementById('f-pages'),
+    cover_url: document.getElementById('f-cover'),
+    description: document.getElementById('f-desc'),
+  };
+
+  let timer = null;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = searchInput.value.trim();
+    if (q.length < 2) { resultsBox.classList.add('hidden'); return; }
+    timer = setTimeout(() => runSearch(q), 350);
+  });
+
+  async function runSearch(q) {
+    try {
+      const res = await fetch('/api/book-search?q=' + encodeURIComponent(q));
+      const data = await res.json();
+      renderResults(data.results || []);
+    } catch (e) {
+      resultsBox.classList.add('hidden');
+    }
+  }
+
+  function renderResults(results) {
+    if (!results.length) {
+      resultsBox.innerHTML = '<div class="p-3 text-sm text-ink/40">No matches — you can still enter it manually below.</div>';
+      resultsBox.classList.remove('hidden');
+      return;
+    }
+    resultsBox.innerHTML = results.map((r, i) => `
+      <button type="button" data-idx="${i}" class="result-item w-full text-left flex gap-3 p-2.5 hover:bg-paper-dim transition border-b border-ink/5 last:border-0">
+        <div class="w-8 h-11 bg-paper-dim rounded-sm overflow-hidden flex-shrink-0">
+          ${r.cover_url ? `<img src="${r.cover_url}" class="w-full h-full object-cover">` : ''}
+        </div>
+        <div class="min-w-0">
+          <div class="text-sm font-semibold text-ink truncate">${escapeHtml(r.title)}</div>
+          <div class="text-xs text-ink/50 truncate">${escapeHtml(r.author)}</div>
+        </div>
+      </button>
+    `).join('');
+    resultsBox.classList.remove('hidden');
+
+    resultsBox.querySelectorAll('.result-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const r = results[parseInt(btn.dataset.idx)];
+        fields.title.value = r.title || '';
+        fields.author.value = r.author || '';
+        fields.genre.value = r.genre || '';
+        fields.published_year.value = r.published_year || '';
+        fields.page_count.value = r.page_count || '';
+        fields.cover_url.value = r.cover_url || '';
+        fields.description.value = r.description || '';
+        searchInput.value = r.title;
+        resultsBox.classList.add('hidden');
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s || '';
+    return div.innerHTML;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!resultsBox.contains(e.target) && e.target !== searchInput) {
+      resultsBox.classList.add('hidden');
+    }
+  });
+})();
+</script>
 {% endblock %}

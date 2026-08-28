@@ -1,96 +1,146 @@
 {% extends "base.html" %}
 {% block title %}{{ book.title }} — Shelfie{% endblock %}
 {% block content %}
-<div class="grid md:grid-cols-3 gap-8">
+<div class="grid md:grid-cols-3 gap-10">
   <div>
-    <div class="aspect-[2/3] bg-stone-200 rounded-lg overflow-hidden shadow mb-4">
+    <div class="card-index rounded-sm aspect-[2/3] overflow-hidden mb-4">
       {% if book.cover_url %}
         <img src="{{ book.cover_url }}" class="w-full h-full object-cover" alt="">
       {% else %}
-        <div class="w-full h-full flex items-center justify-center text-5xl">📖</div>
+        <div class="w-full h-full flex items-center justify-center text-5xl text-ink/20 pt-4">📖</div>
       {% endif %}
     </div>
 
     {% if current_user %}
-    <form method="post" action="/books/{{ book.id }}/shelve" class="mb-2">
-      <select name="status" onchange="this.form.submit()"
-              class="w-full border border-stone-300 rounded px-3 py-2 text-sm font-medium">
-        <option value="" disabled {% if not my_shelf %}selected{% endif %}>Add to shelf...</option>
-        <option value="want_to_read" {% if my_shelf and my_shelf.status == 'want_to_read' %}selected{% endif %}>Want to read</option>
-        <option value="reading" {% if my_shelf and my_shelf.status == 'reading' %}selected{% endif %}>Currently reading</option>
-        <option value="read" {% if my_shelf and my_shelf.status == 'read' %}selected{% endif %}>Read</option>
-      </select>
-    </form>
-    {% if my_shelf %}
-    <form method="post" action="/books/{{ book.id }}/unshelve">
-      <button class="text-xs text-stone-400 hover:text-red-600">Remove from shelf</button>
-    </form>
-    {% endif %}
+    <div class="card-index rounded-sm p-4 mb-3">
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">Circulation status</p>
+      <form method="post" action="/books/{{ book.id }}/shelve" class="grid grid-cols-3 gap-1.5">
+        {% for val, label in [('want_to_read','Want'), ('reading','Reading'), ('read','Read')] %}
+        <button type="submit" name="status" value="{{ val }}"
+          class="stamp text-center py-2 transition {% if my_shelf and my_shelf.status == val %}bg-ink text-paper border-ink{% else %}text-ink/50 border-ink/20 hover:border-gold hover:text-gold-dark{% endif %}">
+          {{ label }}
+        </button>
+        {% endfor %}
+      </form>
+      {% if my_shelf %}
+      <form method="post" action="/books/{{ book.id }}/unshelve" class="mt-2">
+        <button class="font-stamp text-[10px] text-ink/30 hover:text-rust uppercase tracking-widest">Remove from shelf</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="card-index rounded-sm p-4 mb-3">
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">Add to a list</p>
+      {% if my_lists %}
+      <div class="space-y-1.5 mb-3">
+        {% for l in my_lists %}
+        <form method="post"
+              action="/lists/{{ l.id }}/{{ 'remove-book' if l.id in lists_with_book else 'add-book' }}"
+              class="flex items-center justify-between">
+          <input type="hidden" name="book_id" value="{{ book.id }}">
+          <input type="hidden" name="redirect_to" value="/books/{{ book.id }}">
+          <span class="text-sm text-ink">{{ l.name }}</span>
+          <button type="submit" class="font-stamp text-[10px] uppercase tracking-widest {% if l.id in lists_with_book %}text-gold-dark{% else %}text-ink/40 hover:text-gold-dark{% endif %}">
+            {{ '✓ Added' if l.id in lists_with_book else '+ Add' }}
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <details>
+        <summary class="font-stamp text-[10px] uppercase tracking-widest text-gold cursor-pointer">+ New list</summary>
+        <form method="post" action="/lists/new" class="mt-2 space-y-2">
+          <input type="hidden" name="redirect_to" value="/books/{{ book.id }}">
+          <input type="hidden" name="book_id" value="{{ book.id }}">
+          <input type="text" name="name" required placeholder="List name, e.g. Favorites"
+                 class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-2.5 py-1.5 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+          <button class="w-full bg-ink text-paper text-xs font-semibold rounded-sm py-1.5 hover:bg-gold hover:text-ink transition">Create & add this book</button>
+        </form>
+      </details>
+    </div>
     {% else %}
-      <a href="/login" class="block text-center bg-amber-800 text-white rounded py-2 text-sm font-medium hover:bg-amber-900">Log in to shelve this book</a>
+      <a href="/login" class="block text-center bg-gold text-ink rounded-sm py-2.5 text-sm font-semibold hover:bg-gold-dark transition">Log in to shelve this book</a>
     {% endif %}
   </div>
 
   <div class="md:col-span-2">
-    <h1 class="font-display text-3xl font-bold">{{ book.title }}</h1>
-    <p class="text-stone-500 mb-2">by {{ book.author }}</p>
-    <div class="flex items-center gap-3 text-sm mb-4">
+    <h1 class="font-display text-4xl text-paper leading-tight">{{ book.title }}</h1>
+    <p class="text-paper/50 font-stamp text-sm mb-3">by {{ book.author }}</p>
+    <div class="flex items-center gap-3 text-sm mb-6">
       {% if avg_rating %}
         <span class="star text-lg">{{ "★" * (avg_rating|round|int) }}{{ "☆" * (5 - (avg_rating|round|int)) }}</span>
-        <span class="text-stone-500">{{ avg_rating }} avg · {{ rating_count }} rating{{ 's' if rating_count != 1 }}</span>
+        <span class="text-paper/50">{{ avg_rating }} avg · {{ rating_count }} rating{{ 's' if rating_count != 1 }}</span>
       {% else %}
-        <span class="text-stone-400">No ratings yet</span>
+        <span class="text-paper/30">No ratings yet</span>
       {% endif %}
-      {% if book.genre %}<span class="bg-stone-200 text-stone-600 px-2 py-0.5 rounded-full text-xs">{{ book.genre }}</span>{% endif %}
+      {% if book.genre %}<span class="stamp text-gold border-gold/50">{{ book.genre }}</span>{% endif %}
     </div>
-    {% if book.description %}<p class="text-stone-700 mb-6">{{ book.description }}</p>{% endif %}
+    {% if book.description %}<p class="text-paper/70 mb-8 max-w-xl leading-relaxed">{{ book.description }}</p>{% endif %}
 
-    <hr class="my-6 border-stone-200">
+    <hr class="my-8 border-paper/10">
 
     {% if current_user %}
-    <div class="bg-white border border-stone-200 rounded-lg p-4 mb-6">
-      <h3 class="font-semibold mb-3">{{ 'Update your review' if my_review else 'Rate & review' }}</h3>
+    <div class="card-index rounded-sm p-5 mb-8 max-w-xl">
+      <h3 class="font-display text-xl text-ink mb-3">{{ 'Update your review' if my_review else 'Rate & review' }}</h3>
       <form method="post" action="/books/{{ book.id }}/review" class="space-y-3">
-        <div>
-          <label class="text-sm font-medium mr-2">Rating</label>
-          <select name="rating" required class="border border-stone-300 rounded px-2 py-1">
-            {% for i in range(1,6) %}
-            <option value="{{ i }}" {% if my_review and my_review.rating == i %}selected{% endif %}>{{ i }} star{{ 's' if i != 1 }}</option>
-            {% endfor %}
-          </select>
+        <div class="star-picker flex gap-1 text-2xl" data-value="{{ my_review.rating if my_review else 0 }}">
+          {% for i in range(1,6) %}
+          <span class="cursor-pointer text-ink/20 star-opt" data-star="{{ i }}">★</span>
+          {% endfor %}
+          <input type="hidden" name="rating" id="rating-input" value="{{ my_review.rating if my_review else '' }}" required>
         </div>
         <textarea name="body" rows="3" placeholder="Share your thoughts..."
-                  class="w-full border border-stone-300 rounded px-3 py-2 text-sm">{{ my_review.body if my_review else '' }}</textarea>
-        <label class="flex items-center gap-2 text-xs text-stone-500">
+                  class="w-full border border-ink/15 rounded-sm px-3 py-2 text-sm bg-paper text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-gold">{{ my_review.body if my_review else '' }}</textarea>
+        <label class="flex items-center gap-2 text-xs text-ink/50">
           <input type="checkbox" name="spoiler" value="true" {% if my_review and my_review.spoiler %}checked{% endif %}> Contains spoilers
         </label>
-        <button class="bg-amber-800 text-white rounded px-4 py-1.5 text-sm font-medium hover:bg-amber-900">Post review</button>
+        <button class="bg-ink text-paper rounded-sm px-4 py-2 text-sm font-semibold hover:bg-gold hover:text-ink transition">Post review</button>
       </form>
     </div>
+    <script>
+      (function() {
+        const picker = document.querySelector('.star-picker');
+        if (!picker) return;
+        const input = document.getElementById('rating-input');
+        const stars = picker.querySelectorAll('.star-opt');
+        function paint(n) {
+          stars.forEach(s => {
+            s.classList.toggle('text-gold', parseInt(s.dataset.star) <= n);
+            s.classList.toggle('text-ink/20', parseInt(s.dataset.star) > n);
+          });
+        }
+        paint(parseInt(picker.dataset.value) || 0);
+        stars.forEach(s => {
+          s.addEventListener('mouseenter', () => paint(parseInt(s.dataset.star)));
+          s.addEventListener('click', () => { input.value = s.dataset.star; paint(parseInt(s.dataset.star)); });
+        });
+        picker.addEventListener('mouseleave', () => paint(parseInt(input.value) || 0));
+      })();
+    </script>
     {% endif %}
 
-    <h3 class="font-semibold mb-3">Reviews</h3>
+    <h3 class="font-display text-xl text-paper mb-4">Reviews</h3>
     <div class="space-y-4">
       {% for r in reviews %}
-      <div class="border-b border-stone-100 pb-4">
+      <div class="card-index rounded-sm p-4">
         <div class="flex justify-between items-start">
-          <a href="/u/{{ r.profiles.username }}" class="font-semibold text-sm hover:text-amber-800">{{ r.profiles.username }}</a>
+          <a href="/u/{{ r.profiles.username }}" class="font-semibold text-sm text-ink hover:text-gold-dark transition">{{ r.profiles.username }}</a>
           <span class="star">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
         </div>
         {% if r.spoiler %}
-          <details class="text-sm mt-1"><summary class="cursor-pointer text-stone-400">Contains spoilers — click to reveal</summary><p class="mt-1 text-stone-700">{{ r.body }}</p></details>
+          <details class="text-sm mt-1"><summary class="cursor-pointer text-ink/40">Contains spoilers — click to reveal</summary><p class="mt-1 text-ink/80">{{ r.body }}</p></details>
         {% elif r.body %}
-          <p class="text-sm text-stone-700 mt-1">{{ r.body }}</p>
+          <p class="text-sm text-ink/80 mt-1">{{ r.body }}</p>
         {% endif %}
         {% if current_user %}
         <form method="post" action="/reviews/{{ r.id }}/like" class="inline">
           <input type="hidden" name="book_id" value="{{ book.id }}">
-          <button class="text-xs text-stone-400 hover:text-amber-800 mt-2">♥ Like</button>
+          <button class="font-stamp text-[10px] text-ink/30 hover:text-rust mt-2 uppercase tracking-widest">♥ Like</button>
         </form>
         {% endif %}
       </div>
       {% else %}
-      <p class="text-stone-400 text-sm">No reviews yet — be the first!</p>
+      <p class="text-paper/30 text-sm">No reviews yet — be the first!</p>
       {% endfor %}
     </div>
   </div>

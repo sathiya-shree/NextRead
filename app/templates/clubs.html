@@ -1,19 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Book Clubs — Shelfie{% endblock %}
 {% block content %}
-<div class="flex justify-between items-center mb-6">
-  <h1 class="font-display text-2xl font-bold">Book Clubs</h1>
-  {% if current_user %}<a href="/clubs/new" class="bg-amber-800 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-amber-900">+ Start a club</a>{% endif %}
+<div class="flex justify-between items-end mb-8">
+  <div>
+    <p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2">Reading tables</p>
+    <h1 class="font-display text-3xl text-paper">Book Clubs</h1>
+  </div>
+  {% if current_user %}<a href="/clubs/new" class="bg-gold text-ink font-semibold px-4 py-2 rounded-full text-sm hover:bg-gold-dark transition">+ Start a club</a>{% endif %}
 </div>
 <div class="grid sm:grid-cols-2 gap-4">
   {% for club in clubs %}
-  <a href="/clubs/{{ club.id }}" class="block bg-white border border-stone-200 rounded-lg p-4 hover:shadow-md transition">
-    <h3 class="font-semibold text-lg">{{ club.name }}{% if club.is_private %} 🔒{% endif %}</h3>
-    <p class="text-stone-500 text-sm mt-1 line-clamp-2">{{ club.description }}</p>
-    <p class="text-xs text-stone-400 mt-2">{{ club.club_members[0].count if club.club_members else 0 }} members</p>
+  <a href="/clubs/{{ club.id }}" class="card-index rounded-sm block p-5 hover:-translate-y-0.5 transition-transform">
+    <h3 class="font-display text-lg text-ink">{{ club.name }}{% if club.is_private %} 🔒{% endif %}</h3>
+    <p class="text-ink/50 text-sm mt-1 line-clamp-2">{{ club.description }}</p>
+    <p class="font-stamp text-[10px] text-ink/40 mt-3 uppercase tracking-widest">{{ club.member_count }} members</p>
   </a>
   {% else %}
-  <p class="text-stone-400">No clubs yet. <a href="/clubs/new" class="text-amber-800 underline">Start one</a>!</p>
+  <p class="text-paper/40">No clubs yet. <a href="/clubs/new" class="text-gold underline">Start one</a>!</p>
   {% endfor %}
 </div>
 {% endblock %}

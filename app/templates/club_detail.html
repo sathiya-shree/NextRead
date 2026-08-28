@@ -3,95 +3,101 @@
 {% block content %}
 <div class="flex justify-between items-start mb-2">
   <div>
-    <h1 class="font-display text-3xl font-bold">{{ club.name }}{% if club.is_private %} 🔒{% endif %}</h1>
-    <p class="text-stone-500">{{ club.description }}</p>
-    <p class="text-xs text-stone-400 mt-1">{{ members|length }} members</p>
+    <p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2">{% if club.is_private %}Private table{% else %}Open table{% endif %}</p>
+    <h1 class="font-display text-3xl text-paper">{{ club.name }}</h1>
+    <p class="text-paper/50 mt-1 max-w-xl">{{ club.description }}</p>
+    <p class="font-stamp text-xs text-paper/40 mt-2 uppercase tracking-widest">{{ members|length }} members</p>
   </div>
+  <div class="flex flex-col items-end gap-2">
   {% if current_user %}
     {% if is_member %}
-    <form method="post" action="/clubs/{{ club.id }}/leave"><button class="text-sm border border-stone-300 rounded-full px-4 py-1.5 hover:bg-stone-100">Leave</button></form>
+    <form method="post" action="/clubs/{{ club.id }}/leave"><button class="text-sm border border-paper/20 text-paper rounded-full px-4 py-1.5 hover:border-rust hover:text-rust transition">Leave</button></form>
     {% else %}
-    <form method="post" action="/clubs/{{ club.id }}/join"><button class="text-sm bg-amber-800 text-white rounded-full px-4 py-1.5 hover:bg-amber-900">Join club</button></form>
+    <form method="post" action="/clubs/{{ club.id }}/join"><button class="text-sm bg-gold text-ink font-semibold rounded-full px-4 py-1.5 hover:bg-gold-dark transition">Join club</button></form>
     {% endif %}
   {% endif %}
+  <button onclick="navigator.clipboard.writeText(window.location.href); this.textContent='Link copied!'; setTimeout(()=>this.textContent='Copy invite link', 1500)"
+          class="font-stamp text-[10px] uppercase tracking-widest text-gold hover:text-gold-dark">Copy invite link</button>
+  </div>
 </div>
 
-<hr class="my-6 border-stone-200">
+<hr class="my-8 border-paper/10">
 
-<div class="grid md:grid-cols-3 gap-8">
+<div class="grid md:grid-cols-3 gap-10">
   <div class="md:col-span-2">
-    <h2 class="font-display text-xl font-bold mb-3">Currently reading</h2>
+    <h2 class="font-display text-xl text-paper mb-4">Currently reading</h2>
     {% if current_book %}
-    <div class="flex gap-4 bg-white border border-stone-200 rounded-lg p-4 mb-6">
-      <div class="w-16 aspect-[2/3] bg-stone-200 rounded overflow-hidden flex-shrink-0">
+    <div class="card-index rounded-sm flex gap-4 p-4 mb-6">
+      <div class="w-16 aspect-[2/3] bg-paper-dim rounded-sm overflow-hidden flex-shrink-0">
         {% if current_book.books.cover_url %}<img src="{{ current_book.books.cover_url }}" class="w-full h-full object-cover">{% endif %}
       </div>
       <div>
-        <a href="/books/{{ current_book.books.id }}" class="font-semibold hover:text-amber-800">{{ current_book.books.title }}</a>
-        <p class="text-sm text-stone-500">{{ current_book.books.author }}</p>
+        <a href="/books/{{ current_book.books.id }}" class="font-display text-ink hover:text-gold-dark transition">{{ current_book.books.title }}</a>
+        <p class="text-sm text-ink/50 font-stamp">{{ current_book.books.author }}</p>
       </div>
     </div>
 
     {% if is_member %}
-    <div class="bg-white border border-stone-200 rounded-lg p-4 mb-6">
-      <h3 class="font-semibold mb-2 text-sm">Start a discussion</h3>
+    <div class="card-index rounded-sm p-4 mb-6">
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">Start a discussion</p>
       <form method="post" action="/clubs/{{ club.id }}/discussions/new" class="space-y-2">
         <input type="hidden" name="club_book_id" value="{{ current_book.id }}">
         <input type="text" name="title" required placeholder="Discussion title"
-               class="w-full border border-stone-300 rounded px-3 py-2 text-sm">
+               class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-gold">
         <textarea name="body" rows="2" placeholder="What do you want to discuss?"
-                  class="w-full border border-stone-300 rounded px-3 py-2 text-sm"></textarea>
+                  class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-gold"></textarea>
         <div class="flex items-center gap-4">
-          <input type="number" name="page_marker" placeholder="Up to page..." class="border border-stone-300 rounded px-2 py-1 text-sm w-32">
-          <label class="flex items-center gap-1 text-xs text-stone-500"><input type="checkbox" name="spoiler" value="true"> Spoilers</label>
+          <input type="number" name="page_marker" placeholder="Up to page..." class="bg-canvas/40 border border-ink/15 rounded-sm px-2 py-1 text-sm text-ink w-32 focus:outline-none focus:ring-1 focus:ring-gold">
+          <label class="flex items-center gap-1 text-xs text-ink/50"><input type="checkbox" name="spoiler" value="true"> Spoilers</label>
         </div>
-        <button class="bg-amber-800 text-white rounded px-4 py-1.5 text-sm font-medium hover:bg-amber-900">Post</button>
+        <button class="bg-ink text-paper font-semibold rounded-sm px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition">Post</button>
       </form>
     </div>
     {% endif %}
 
-    <h3 class="font-semibold mb-2">Discussions</h3>
+    <h3 class="font-display text-lg text-paper mb-3">Discussions</h3>
     <div class="space-y-3">
       {% for d in discussions %}
-      <a href="/discussions/{{ d.id }}" class="block bg-white border border-stone-200 rounded-lg p-3 hover:shadow-sm">
+      <a href="/discussions/{{ d.id }}" class="card-index rounded-sm block p-3.5 hover:-translate-y-0.5 transition-transform">
         <div class="flex justify-between text-sm">
-          <span class="font-semibold">{{ d.title }}{% if d.spoiler %} <span class="text-red-500 text-xs">(spoilers)</span>{% endif %}</span>
-          {% if d.page_marker %}<span class="text-xs text-stone-400">up to p.{{ d.page_marker }}</span>{% endif %}
+          <span class="font-semibold text-ink">{{ d.title }}{% if d.spoiler %} <span class="text-rust text-xs">(spoilers)</span>{% endif %}</span>
+          {% if d.page_marker %}<span class="font-stamp text-xs text-ink/40">p.{{ d.page_marker }}</span>{% endif %}
         </div>
-        <p class="text-xs text-stone-400 mt-1">by {{ d.profiles.username }}</p>
+        <p class="font-stamp text-xs text-ink/40 mt-1">by {{ d.profiles.username }}</p>
       </a>
       {% else %}
-      <p class="text-stone-400 text-sm">No discussions yet.</p>
+      <p class="text-paper/30 text-sm">No discussions yet.</p>
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-stone-400 mb-4">No book assigned yet.</p>
+    <p class="text-paper/30 mb-4">No book assigned yet.</p>
     {% endif %}
 
     {% if is_member and all_books %}
-    <div class="mt-6 bg-white border border-stone-200 rounded-lg p-4">
-      <h3 class="font-semibold mb-2 text-sm">Assign a new club book</h3>
+    <div class="mt-6 card-index rounded-sm p-4">
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">Assign a new club book</p>
       <form method="post" action="/clubs/{{ club.id }}/assign-book" class="flex gap-2">
-        <select name="book_id" required class="flex-1 border border-stone-300 rounded px-3 py-2 text-sm">
+        <select name="book_id" required class="flex-1 bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-gold">
           <option value="" disabled selected>Choose a book...</option>
           {% for b in all_books %}
           <option value="{{ b.id }}">{{ b.title }} — {{ b.author }}</option>
           {% endfor %}
         </select>
-        <button class="bg-stone-800 text-white rounded px-4 py-2 text-sm hover:bg-stone-900">Assign</button>
+        <button class="bg-ink text-paper rounded-sm px-4 py-2 text-sm font-semibold hover:bg-gold hover:text-ink transition">Assign</button>
       </form>
-      <p class="text-xs text-stone-400 mt-2">Don't see the book? <a href="/books/add" class="text-amber-800 underline">Add it</a> first.</p>
+      <p class="text-xs text-ink/40 mt-2">Don't see the book? <a href="/books/add" class="text-gold-dark underline">Add it</a> first.</p>
     </div>
     {% endif %}
   </div>
 
   <div>
-    <h2 class="font-display text-xl font-bold mb-3">Members</h2>
+    <h2 class="font-display text-xl text-paper mb-4">Members</h2>
     <div class="space-y-2">
       {% for m in members %}
-      <a href="/u/{{ m.profiles.username }}" class="flex items-center gap-2 text-sm hover:text-amber-800">
+      <a href="/u/{{ m.profiles.username }}" class="flex items-center gap-2 text-sm text-paper/70 hover:text-gold transition">
+        <span class="w-6 h-6 rounded-full bg-gold/20 text-gold flex items-center justify-center font-stamp text-[10px] font-bold">{{ m.profiles.username[0]|upper }}</span>
         <span>{{ m.profiles.username }}</span>
-        {% if m.role != 'member' %}<span class="text-xs bg-stone-200 px-2 py-0.5 rounded-full">{{ m.role }}</span>{% endif %}
+        {% if m.role != 'member' %}<span class="stamp text-[9px] text-gold border-gold/40 py-0.5 px-1.5">{{ m.role }}</span>{% endif %}
       </a>
       {% endfor %}
     </div>

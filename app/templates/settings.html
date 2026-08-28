@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Edit profile — Shelfie{% endblock %}
+{% block content %}
+<div class="max-w-sm mx-auto">
+  <p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2 text-center">Update your card</p>
+  <h1 class="font-display text-3xl text-paper text-center mb-6">Edit profile</h1>
+
+  <div class="card-index rounded-sm p-6">
+    {% if error %}<p class="bg-rust/10 text-rust text-sm p-3 rounded-sm mb-4 border border-rust/30">{{ error }}</p>{% endif %}
+
+    <form method="post" action="/settings" enctype="multipart/form-data" class="space-y-4">
+      <div class="flex flex-col items-center mb-2">
+        <div class="relative w-20 h-20 mb-2">
+          <div id="avatar-preview" class="w-20 h-20 rounded-full bg-gold text-ink flex items-center justify-center font-stamp font-bold text-2xl overflow-hidden">
+            {% if current_user.avatar_url %}
+              <img src="{{ current_user.avatar_url }}" class="w-full h-full object-cover" id="avatar-img">
+            {% else %}
+              <span id="avatar-initial">{{ current_user.username[0]|upper }}</span>
+            {% endif %}
+          </div>
+          <label for="avatar-input" class="absolute -bottom-1 -right-1 w-7 h-7 bg-ink text-paper rounded-full flex items-center justify-center cursor-pointer border-2 border-paper text-xs hover:bg-gold hover:text-ink transition">
+            ✎
+          </label>
+        </div>
+        <input type="file" name="avatar" id="avatar-input" accept="image/*" class="hidden">
+        <p class="font-stamp text-[10px] text-ink/40 uppercase tracking-widest">Tap the pencil to change photo</p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Username</label>
+        <input type="text" name="username" value="{{ current_user.username }}" required pattern="[a-zA-Z0-9_.]+"
+               class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+      </div>
+      <div>
+        <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Display name</label>
+        <input type="text" name="display_name" value="{{ current_user.display_name or '' }}"
+               class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+      </div>
+      <div>
+        <label class="block text-xs font-stamp uppercase tracking-wide text-ink/50 mb-1">Caption / bio</label>
+        <textarea name="bio" rows="2" maxlength="140" placeholder="A short line about your reading taste..."
+                  class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-3 py-2 text-ink text-sm focus:outline-none focus:ring-1 focus:ring-gold">{{ current_user.bio or '' }}</textarea>
+      </div>
+      <button class="w-full bg-ink text-paper font-semibold rounded-sm py-2.5 hover:bg-gold hover:text-ink transition">Save changes</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const input = document.getElementById('avatar-input');
+  const preview = document.getElementById('avatar-preview');
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    preview.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
+  });
+</script>
+{% endblock %}
