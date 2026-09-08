@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_stars.html" import stars %}
 {% block title %}Shelfie — Home{% endblock %}
 {% block content %}
 
@@ -19,10 +20,10 @@
   <div class="md:col-span-2">
     <div class="card-index rounded-sm px-6 py-5 text-ink -rotate-1 max-w-xs ml-auto">
       <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-3">Date due — return by chapter's end</p>
-      {% for r in recent_reviews[:3] %}
+      {% for r in hero_reviews %}
       <div class="flex justify-between items-baseline border-b border-ink/10 py-1.5 text-sm">
         <span class="font-display italic truncate mr-2">{{ r.books.title }}</span>
-        <span class="font-stamp text-[11px] text-gold-dark">{{ "★" * r.rating }}</span>
+        <span class="font-stamp text-[11px] text-gold-dark">{{ stars(r.rating, empty_class='text-ink/15') }}</span>
       </div>
       {% else %}
       <p class="text-ink/40 text-sm">No stamps yet — be the first.</p>
@@ -131,16 +132,50 @@
   </div>
 
   <div>
-    <h2 class="font-display text-2xl text-paper mb-5">On the shelf</h2>
+    <div class="flex items-baseline justify-between mb-5">
+      <h2 class="font-display text-2xl text-paper">Activity</h2>
+      <a href="/notifications" class="font-stamp text-[10px] text-gold hover:text-gold-dark uppercase tracking-widest">Notifications</a>
+    </div>
+
+    {% if current_user %}
+    <form method="post" action="/posts/new" class="card-index rounded-sm p-3.5 mb-4">
+      <input type="hidden" name="redirect_to" value="/">
+      <textarea name="body" rows="2" required maxlength="500" placeholder="What's on your mind?"
+                class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-2.5 py-1.5 text-sm text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-gold"></textarea>
+      <div class="flex justify-end mt-2">
+        <button class="bg-ink text-paper font-stamp text-[10px] uppercase tracking-widest rounded-sm px-3 py-1.5 hover:bg-gold hover:text-ink transition">Post</button>
+      </div>
+    </form>
+    {% endif %}
+
     <div class="space-y-3">
-      {% for r in recent_reviews %}
+      {% for item in feed_items %}
+      {% set d = item.data %}
       <div class="card-index rounded-sm p-3.5 text-sm text-ink">
-        <div class="flex justify-between items-start mb-1">
-          <a href="/u/{{ r.profiles.username }}" class="font-semibold hover:text-gold-dark transition">{{ r.profiles.username }}</a>
-          <span class="star text-xs">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
-        </div>
-        <a href="/books/{{ r.books and r.book_id }}" class="text-ink/60 text-xs">stamped <span class="italic">{{ r.books.title }}</span> — {{ r.books.author }}</a>
-        {% if r.body %}<p class="text-ink/80 mt-1.5 line-clamp-3">{{ r.body }}</p>{% endif %}
+        {% if item.kind == 'review' %}
+          <div class="flex justify-between items-start mb-1">
+            <a href="/u/{{ d.profiles.username }}" class="font-semibold hover:text-gold-dark transition">{{ d.profiles.username }}</a>
+            <span class="star text-xs">{{ stars(d.rating) }}</span>
+          </div>
+          <a href="/books/{{ d.books.id }}" class="text-ink/60 text-xs">reviewed <span class="italic">{{ d.books.title }}</span> — {{ d.books.author }}</a>
+          {% if d.body %}<p class="text-ink/80 mt-1.5 line-clamp-3">{{ d.body }}</p>{% endif %}
+        {% elif item.kind == 'started_reading' %}
+          <a href="/u/{{ d.profiles.username }}" class="font-semibold hover:text-gold-dark transition">{{ d.profiles.username }}</a>
+          <span class="text-ink/60">started reading</span>
+          {% if d.books %}<a href="/books/{{ d.books.id }}" class="italic hover:text-gold-dark transition">{{ d.books.title }}</a>{% endif %}
+        {% elif item.kind == 'finished_reading' %}
+          <a href="/u/{{ d.profiles.username }}" class="font-semibold hover:text-gold-dark transition">{{ d.profiles.username }}</a>
+          <span class="text-ink/60">finished</span>
+          {% if d.books %}<a href="/books/{{ d.books.id }}" class="italic hover:text-gold-dark transition">{{ d.books.title }}</a>{% endif %}
+        {% else %}
+          <div class="flex justify-between items-start mb-1">
+            <a href="/u/{{ d.profiles.username }}" class="font-semibold hover:text-gold-dark transition">{{ d.profiles.username }}</a>
+            {% if current_user and current_user.id == d.user_id %}
+            <form method="post" action="/posts/{{ d.id }}/delete"><input type="hidden" name="redirect_to" value="/"><button class="font-stamp text-[9px] text-ink/25 hover:text-rust uppercase tracking-widest">Delete</button></form>
+            {% endif %}
+          </div>
+          <p class="text-ink/80">{{ d.body }}</p>
+        {% endif %}
       </div>
       {% else %}
       <p class="text-paper/30 text-sm">No activity yet.</p>

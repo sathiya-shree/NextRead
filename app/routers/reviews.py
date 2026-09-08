@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from app.db import public_client
 from app.auth import get_current_user, get_user_client
 from app.templating import render
+from app.notifications import notify, log_activity
 
 router = APIRouter()
 
@@ -57,13 +58,17 @@ def reviews_page(request: Request, q: str = "", user: str = ""):
 def write_review(
     request: Request,
     book_id: str,
-    rating: int = Form(...),
+    rating: float = Form(...),
     body: str = Form(""),
     spoiler: bool = Form(False),
 ):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
+
+    # Clamp to 1-5 and snap to the nearest half-star, defensively —
+    # the picker UI already does this, but never trust the client alone.
+    rating = round(max(1.0, min(5.0, rating)) * 2) / 2
 
     client = get_user_client(request)
     client.table("reviews").upsert(
@@ -82,6 +87,21 @@ def write_review(
         {"user_id": user["id"], "book_id": book_id, "status": "read"},
         on_conflict="user_id,book_id",
     ).execute()
+    log_activity(client, user["id"])
+
+    return RedirectResponse(f"/books/{book_id}", status_code=303)
+
+
+@router.post("/books/{book_id}/review/delete")
+def delete_review(request: Request, book_id: str):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    client = get_user_client(request)
+    # RLS (reviews_cud_own) already scopes this to the caller's own review —
+    # the eq(user_id) here is belt-and-suspenders, not the only guard.
+    client.table("reviews").delete().eq("book_id", book_id).eq("user_id", user["id"]).execute()
 
     return RedirectResponse(f"/books/{book_id}", status_code=303)
 
@@ -109,6 +129,19 @@ def like_review(request: Request, review_id: str, book_id: str = Form(...)):
         client.table("review_likes").insert(
             {"review_id": review_id, "user_id": user["id"]}
         ).execute()
+        # Only notify on the "add" side of the toggle, not on unlike
+        review_row = (
+            public_client.table("reviews").select("user_id").eq("id", review_id).limit(1).execute().data
+        )
+        if review_row:
+            notify(
+                client,
+                user_id=review_row[0]["user_id"],
+                actor_id=user["id"],
+                type_="review_like",
+                message=f"{user['username']} liked your review",
+                link=f"/books/{book_id}",
+            )
 
     return RedirectResponse(f"/books/{book_id}", status_code=303)
 
@@ -125,5 +158,18 @@ def comment_review(
     client.table("review_comments").insert(
         {"review_id": review_id, "user_id": user["id"], "body": body}
     ).execute()
+
+    review_row = (
+        public_client.table("reviews").select("user_id").eq("id", review_id).limit(1).execute().data
+    )
+    if review_row:
+        notify(
+            client,
+            user_id=review_row[0]["user_id"],
+            actor_id=user["id"],
+            type_="review_comment",
+            message=f"{user['username']} commented on your review",
+            link=f"/books/{book_id}",
+        )
 
     return RedirectResponse(f"/books/{book_id}", status_code=303)

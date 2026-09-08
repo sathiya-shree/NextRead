@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 
-from app.routers import auth_router, books, shelves, reviews, clubs, users, book_search, import_router, lists
+from app.routers import auth_router, books, shelves, reviews, clubs, users, book_search, import_router, lists, notifications_router, moderation_router
 
 load_dotenv()
 
@@ -54,3 +54,5 @@ app.include_router(clubs.router)
 app.include_router(users.router)
 app.include_router(import_router.router)
 app.include_router(lists.router)
+app.include_router(notifications_router.router)
+app.include_router(moderation_router.router)

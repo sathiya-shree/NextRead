@@ -33,6 +33,10 @@
   </div>
   {% endif %}
 
+  {% if covers_updated %}
+  <p class="text-paper/50 text-sm mb-6">Also filled in <span class="text-gold">{{ covers_updated }}</span> missing cover image{{ 's' if covers_updated != 1 }} across your catalog.</p>
+  {% endif %}
+
   <a href="/" class="inline-block bg-gold text-ink font-semibold px-5 py-2.5 rounded-full text-sm hover:bg-gold-dark transition">Go to your shelf</a>
 </div>
 {% endblock %}

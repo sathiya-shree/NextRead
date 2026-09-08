@@ -20,10 +20,6 @@ create table if not exists list_books (
   unique (list_id, book_id)
 );
 
-create policy "books_update_auth" on books for update
-  using (auth.uid() is not null)
-  with check (auth.uid() is not null);
-
 alter table custom_lists enable row level security;
 alter table list_books enable row level security;
 

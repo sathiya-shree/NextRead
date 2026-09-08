@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Notifications — Shelfie{% endblock %}
+{% block content %}
+<p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2">Message slip</p>
+<h1 class="font-display text-3xl text-paper mb-8">Notifications</h1>
+
+<div class="space-y-2 max-w-lg">
+  {% for n in items %}
+  <a href="{{ n.link }}" class="card-index rounded-sm p-4 flex items-start gap-3 block {% if not n.is_read %}ring-1 ring-gold{% endif %}">
+    <span class="w-8 h-8 rounded-full bg-gold text-ink flex items-center justify-center font-stamp font-bold text-xs shrink-0 overflow-hidden">
+      {% if n.actor and n.actor.avatar_url %}
+        <img src="{{ n.actor.avatar_url }}" class="w-full h-full object-cover">
+      {% elif n.actor %}
+        {{ n.actor.username[0]|upper }}
+      {% else %}
+        ·
+      {% endif %}
+    </span>
+    <div class="min-w-0">
+      <p class="text-sm text-ink">{{ n.message }}</p>
+      <p class="font-stamp text-[10px] text-ink/40 uppercase tracking-widest mt-1">{{ n.created_at[:10] }}</p>
+    </div>
+  </a>
+  {% else %}
+  <p class="text-paper/30 text-sm">Nothing yet — follows, replies, and club activity will show up here.</p>
+  {% endfor %}
+</div>
+{% endblock %}

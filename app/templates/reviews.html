@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_stars.html" import stars %}
 {% block title %}{% if filter_profile %}{{ filter_profile.username }}'s reviews{% else %}Reviews{% endif %} — Shelfie{% endblock %}
 {% block content %}
 <p class="font-stamp text-xs text-gold uppercase tracking-widest mb-2">Reading room</p>
@@ -21,7 +22,7 @@
   <div class="card-index rounded-sm p-4">
     <div class="flex justify-between items-start mb-2">
       <a href="/u/{{ r.profiles.username }}" class="font-semibold text-sm text-ink hover:text-gold-dark transition">{{ r.profiles.username }}</a>
-      <span class="star">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
+      <span class="star">{{ stars(r.rating) }}</span>
     </div>
     <a href="/books/{{ r.books.id }}" class="flex items-center gap-2 mb-2 group">
       <div class="w-6 h-9 bg-paper-dim rounded-sm overflow-hidden flex-shrink-0">

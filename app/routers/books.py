@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from app.db import public_client
 from app.auth import get_current_user, get_user_client
 from app.templating import render
+from app.moderation import get_report_counts, HIDE_THRESHOLD
 
 router = APIRouter()
 
@@ -30,19 +31,65 @@ def home(request: Request, q: str = ""):
             .data
         )
 
-    # Recent reviews from anyone, newest first, for the activity feed
+    # Build the activity feed from two sources: reviews, and activity_posts
+    # (manual "share something" posts + auto-logged started/finished-reading
+    # milestones), merged and sorted together by time.
     recent_reviews = (
         public_client.table("reviews")
-        .select("*, profiles!reviews_user_id_fkey(username,avatar_url), books(title,author,cover_url)")
+        .select("*, profiles!reviews_user_id_fkey(username,avatar_url), books(id,title,author,cover_url)")
         .order("created_at", desc=True)
-        .limit(10)
+        .limit(12)
+        .execute()
+        .data
+    )
+    recent_posts = (
+        public_client.table("activity_posts")
+        .select("*, profiles(username,avatar_url), books(id,title,author,cover_url)")
+        .order("created_at", desc=True)
+        .limit(12)
         .execute()
         .data
     )
 
+    feed_items = []
+    for r in recent_reviews:
+        feed_items.append({"kind": "review", "created_at": r["created_at"], "data": r})
+    for p in recent_posts:
+        feed_items.append({"kind": p["type"], "created_at": p["created_at"], "data": p})
+    feed_items.sort(key=lambda x: x["created_at"], reverse=True)
+    feed_items = feed_items[:15]
+
     return render(
-        request, "index.html", books=books, q=q, recent_reviews=recent_reviews
+        request, "index.html", books=books, q=q, feed_items=feed_items, hero_reviews=recent_reviews[:3]
     )
+
+
+@router.post("/posts/new")
+def create_post(request: Request, body: str = Form(...), redirect_to: str = Form("/")):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    body = body.strip()
+    if body:
+        client = get_user_client(request)
+        client.table("activity_posts").insert(
+            {"user_id": user["id"], "type": "post", "body": body}
+        ).execute()
+
+    return RedirectResponse(redirect_to, status_code=303)
+
+
+@router.post("/posts/{post_id}/delete")
+def delete_post(request: Request, post_id: str, redirect_to: str = Form("/")):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    client = get_user_client(request)
+    client.table("activity_posts").delete().eq("id", post_id).eq("user_id", user["id"]).execute()
+
+    return RedirectResponse(redirect_to, status_code=303)
 
 
 @router.get("/books/add")
@@ -106,62 +153,80 @@ def book_detail(request: Request, book_id: str):
     book = public_client.table("books").select("*").eq("id", book_id).single().execute().data
     reviews = (
         public_client.table("reviews")
-        .select("*, profiles!reviews_user_id_fkey(username,avatar_url)")
+        .select(
+            "*, profiles!reviews_user_id_fkey(username,avatar_url), "
+            "review_comments(*, profiles(username,avatar_url))"
+        )
         .eq("book_id", book_id)
         .order("created_at", desc=True)
         .execute()
         .data
     )
+    for r in reviews:
+        r["review_comments"] = sorted(
+            r.get("review_comments") or [], key=lambda c: c.get("created_at") or ""
+        )
 
     my_shelf = None
     my_review = None
     my_lists = []
     lists_with_book = set()
     if user:
-        client = get_user_client(request)
-        shelf_res = (
-            client.table("user_books")
-            .select("*")
-            .eq("book_id", book_id)
-            .eq("user_id", user["id"])
-            .execute()
-            .data
-        )
-        my_shelf = shelf_res[0] if shelf_res else None
-        review_res = (
-            client.table("reviews")
-            .select("*")
-            .eq("book_id", book_id)
-            .eq("user_id", user["id"])
-            .execute()
-            .data
-        )
-        my_review = review_res[0] if review_res else None
-
-        my_lists = (
-            client.table("custom_lists")
-            .select("*")
-            .eq("user_id", user["id"])
-            .order("created_at", desc=True)
-            .execute()
-            .data
-        )
-        if my_lists:
-            list_ids = [l["id"] for l in my_lists]
-            membership = (
-                client.table("list_books")
-                .select("list_id")
+        try:
+            client = get_user_client(request)
+            shelf_res = (
+                client.table("user_books")
+                .select("*")
                 .eq("book_id", book_id)
-                .in_("list_id", list_ids)
+                .eq("user_id", user["id"])
                 .execute()
                 .data
             )
-            lists_with_book = {m["list_id"] for m in membership}
+            my_shelf = shelf_res[0] if shelf_res else None
+            review_res = (
+                client.table("reviews")
+                .select("*")
+                .eq("book_id", book_id)
+                .eq("user_id", user["id"])
+                .execute()
+                .data
+            )
+            my_review = review_res[0] if review_res else None
+
+            my_lists = (
+                client.table("custom_lists")
+                .select("*")
+                .eq("user_id", user["id"])
+                .order("created_at", desc=True)
+                .execute()
+                .data
+            )
+            if my_lists:
+                list_ids = [l["id"] for l in my_lists]
+                membership = (
+                    client.table("list_books")
+                    .select("list_id")
+                    .eq("book_id", book_id)
+                    .in_("list_id", list_ids)
+                    .execute()
+                    .data
+                )
+                lists_with_book = {m["list_id"] for m in membership}
+        except Exception:
+            # Dead/expired session token, most likely — degrade to showing
+            # the book with no personal shelf/review/list state rather than
+            # crashing the whole page.
+            my_shelf = None
+            my_review = None
+            my_lists = []
+            lists_with_book = set()
 
     avg_rating = None
     ratings = [r["rating"] for r in reviews if r.get("rating")]
     if ratings:
-        avg_rating = round(sum(ratings) / len(ratings), 2)
+        avg_rating = round(sum(ratings) / len(ratings), 1)
+
+    report_counts = get_report_counts(public_client, "review", [r["id"] for r in reviews])
 
     return render(
         request,
@@ -174,4 +239,6 @@ def book_detail(request: Request, book_id: str):
         rating_count=len(ratings),
         my_lists=my_lists,
         lists_with_book=lists_with_book,
+        report_counts=report_counts,
+        hide_threshold=HIDE_THRESHOLD,
     )

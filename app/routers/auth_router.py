@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
-from app.db import public_client, client_for_user
+from app.db import public_client, client_for_user, SUPABASE_URL, SUPABASE_ANON_KEY
 from app.templating import render
 
 router = APIRouter()
@@ -76,3 +76,31 @@ def signup(
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/", status_code=303)
+
+
+@router.get("/forgot-password")
+def forgot_password_page(request: Request):
+    return render(request, "forgot_password.html", sent=False)
+
+
+@router.post("/forgot-password")
+def forgot_password(request: Request, email: str = Form(...)):
+    redirect_url = str(request.base_url).rstrip("/") + "/reset-password"
+    try:
+        public_client.auth.reset_password_for_email(email, {"redirect_to": redirect_url})
+    except Exception:
+        pass  # never reveal whether an email exists on the platform
+    return render(request, "forgot_password.html", sent=True)
+
+
+@router.get("/reset-password")
+def reset_password_page(request: Request):
+    # This page's JS reads the recovery token Supabase puts in the URL
+    # fragment (#access_token=...) — fragments never reach the server, so
+    # completing the reset has to happen client-side via supabase-js.
+    return render(
+        request,
+        "reset_password.html",
+        supabase_url=SUPABASE_URL,
+        supabase_anon_key=SUPABASE_ANON_KEY,
+    )

@@ -71,6 +71,12 @@
 
       <div class="flex items-center gap-2 text-sm shrink-0 order-2 sm:order-3 ml-auto sm:ml-0">
         {% if current_user %}
+          <a href="/notifications" class="relative w-8 h-8 flex items-center justify-center text-paper/70 hover:text-gold transition" title="Notifications">
+            <span class="text-base">🔔</span>
+            {% if unread_notifications %}
+            <span class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-rust text-paper text-[10px] font-stamp font-bold flex items-center justify-center leading-none">{{ unread_notifications if unread_notifications < 10 else '9+' }}</span>
+            {% endif %}
+          </a>
           <a href="/u/{{ current_user.username }}" class="flex items-center gap-2 group">
             <span class="w-7 h-7 rounded-full bg-gold text-ink flex items-center justify-center font-stamp font-bold text-xs overflow-hidden">
               {% if current_user.avatar_url %}

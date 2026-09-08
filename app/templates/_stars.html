@@ -1,0 +1,1 @@
+{% macro stars(rating, empty_class='text-ink/15', full_class='text-gold') %}<span class="relative inline-block" style="letter-spacing:2px; white-space:nowrap;"><span class="{{ empty_class }}">★★★★★</span><span class="absolute inset-0 overflow-hidden {{ full_class }}" style="width: {{ ((rating or 0)/5*100)|round(1) }}%;">★★★★★</span></span>{% endmacro %}

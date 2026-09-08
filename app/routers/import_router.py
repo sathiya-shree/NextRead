@@ -58,6 +58,43 @@ def _cover_from_isbn(isbn: str) -> str | None:
     return f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
 
 
+def _backfill_missing_covers(client) -> int:
+    """
+    Fills in cover_url for any catalog book that has an ISBN but no cover.
+    No external API calls — Open Library's cover URLs are deterministic
+    from the ISBN alone, so this is just a bulk write.
+    """
+    to_update = []
+    page_size = 1000
+    start = 0
+    while True:
+        page = (
+            public_client.table("books")
+            .select("id,isbn")
+            .is_("cover_url", "null")
+            .not_.is_("isbn", "null")
+            .range(start, start + page_size - 1)
+            .execute()
+            .data
+        )
+        to_update.extend(page)
+        if len(page) < page_size:
+            break
+        start += page_size
+
+    updated = 0
+    for chunk in _chunks(to_update, CHUNK_SIZE):
+        payload = [
+            {"id": b["id"], "cover_url": _cover_from_isbn(b["isbn"])}
+            for b in chunk
+            if b.get("isbn")
+        ]
+        if payload:
+            client.table("books").upsert(payload, on_conflict="id").execute()
+            updated += len(payload)
+    return updated
+
+
 @router.get("/import")
 def import_page(request: Request):
     if not get_current_user(request):
@@ -118,35 +155,50 @@ async def import_goodreads(request: Request, file: UploadFile = File(...)):
             shelved=0,
             reviewed=0,
             skipped=skipped,
+            covers_updated=0,
         )
 
     # --- One bulk read to find which of these already exist in the catalog ---
-    # (fetch id/title/author in pages rather than filtering per-row)
+    # (fetch id/title/author/isbn/cover in pages rather than filtering per-row)
     existing_lookup = {}
     page_size = 1000
     start = 0
     while True:
         page = (
             public_client.table("books")
-            .select("id,title,author")
+            .select("id,title,author,isbn,cover_url")
             .range(start, start + page_size - 1)
             .execute()
             .data
         )
         for b in page:
-            existing_lookup[(b["title"].lower(), b["author"].lower())] = b["id"]
+            existing_lookup[(b["title"].lower(), b["author"].lower())] = b
         if len(page) < page_size:
             break
         start += page_size
 
     matched_existing = 0
     to_insert = []
+    to_enrich = []  # existing catalog rows this CSV can add an isbn/cover to
     for row in parsed:
-        if row["key"] in existing_lookup:
-            row["book_id"] = existing_lookup[row["key"]]
+        existing = existing_lookup.get(row["key"])
+        if existing:
+            row["book_id"] = existing["id"]
             matched_existing += 1
+            if not existing.get("isbn") and row["isbn"]:
+                to_enrich.append(
+                    {
+                        "id": existing["id"],
+                        "isbn": row["isbn"],
+                        "cover_url": existing.get("cover_url") or _cover_from_isbn(row["isbn"]),
+                    }
+                )
         else:
             to_insert.append(row)
+
+    # Enrich catalog entries that were missing an ISBN/cover before
+    for chunk in _chunks(to_enrich, CHUNK_SIZE):
+        client.table("books").upsert(chunk, on_conflict="id").execute()
 
     # --- Bulk-insert new books, chunked ---
     added_books = 0
@@ -201,6 +253,13 @@ async def import_goodreads(request: Request, file: UploadFile = File(...)):
         client.table("reviews").upsert(payload, on_conflict="user_id,book_id").execute()
         reviewed += len(chunk)
 
+    # Catch any remaining catalog books (from this import or earlier ones)
+    # that still have an ISBN but no cover.
+    try:
+        covers_updated = _backfill_missing_covers(client)
+    except Exception:
+        covers_updated = 0
+
     return render(
         request,
         "import_result.html",
@@ -209,54 +268,24 @@ async def import_goodreads(request: Request, file: UploadFile = File(...)):
         shelved=shelved,
         reviewed=reviewed,
         skipped=skipped,
+        covers_updated=covers_updated,
     )
 
 
 @router.post("/tools/backfill-covers")
 def backfill_covers(request: Request):
-    """
-    Fills in cover_url for any catalog book that has an ISBN but no cover —
-    typically books that came in through a Goodreads import before this
-    feature existed. No external API calls: Open Library's cover URLs are
-    deterministic from the ISBN alone.
-    """
+    """Manual trigger for the same backfill that now also runs automatically
+    after every CSV import — kept for people who added books before this
+    existed, or added them manually without a cover."""
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
 
     client = get_user_client(request)
-
-    to_update = []
-    page_size = 1000
-    start = 0
-    while True:
-        page = (
-            public_client.table("books")
-            .select("id,isbn")
-            .is_("cover_url", "null")
-            .not_.is_("isbn", "null")
-            .range(start, start + page_size - 1)
-            .execute()
-            .data
-        )
-        to_update.extend(page)
-        if len(page) < page_size:
-            break
-        start += page_size
-
-    updated = 0
     try:
-        for chunk in _chunks(to_update, CHUNK_SIZE):
-            payload = [
-                {"id": b["id"], "cover_url": _cover_from_isbn(b["isbn"])}
-                for b in chunk
-                if b.get("isbn")
-            ]
-            if payload:
-                client.table("books").upsert(payload, on_conflict="id").execute()
-                updated += len(payload)
+        updated = _backfill_missing_covers(client)
     except Exception as e:
-        return render(request, "import.html", error=f"Couldn't backfill covers: {e}")
+        return render(request, "import.html", error=f"Couldn't backfill covers: {e}", covers_updated=None)
 
-    return render(request, "import.html", covers_updated=updated)
+    return render(request, "import.html", covers_updated=updated, error=None)
 

@@ -6,19 +6,67 @@
 <p class="font-stamp text-xs text-paper/40 uppercase tracking-widest mb-5">by {{ discussion.profiles.username }}{% if discussion.page_marker %} · up to page {{ discussion.page_marker }}{% endif %}{% if discussion.spoiler %} · <span class="text-rust">contains spoilers</span>{% endif %}</p>
 
 {% if discussion.body %}
-{% if discussion.spoiler %}
-<details class="card-index rounded-sm p-4 mb-8"><summary class="cursor-pointer text-ink/50 text-sm">Contains spoilers — click to reveal</summary><p class="mt-2 text-ink/80">{{ discussion.body }}</p></details>
-{% else %}
-<p class="card-index rounded-sm p-4 mb-8 text-ink/80">{{ discussion.body }}</p>
+{% if discussion_report_count >= hide_threshold %}
+<details class="card-index rounded-sm p-4 mb-2">
+  <summary class="cursor-pointer text-sm text-ink/40">This post was reported multiple times — click to view anyway</summary>
+  <div class="mt-2">
 {% endif %}
+{% if discussion.spoiler %}
+<div class="card-index rounded-sm p-4 mb-2"><details><summary class="cursor-pointer text-ink/50 text-sm">Contains spoilers — click to reveal</summary><p class="mt-2 text-ink/80">{{ discussion.body }}</p></details></div>
+{% else %}
+<p class="card-index rounded-sm p-4 mb-2 text-ink/80">{{ discussion.body }}</p>
+{% endif %}
+{% if discussion_report_count >= hide_threshold %}
+  </div>
+</details>
+{% endif %}
+{% endif %}
+
+{% if current_user %}
+<details class="mb-8">
+  <summary class="font-stamp text-[10px] text-ink/40 hover:text-rust uppercase tracking-widest cursor-pointer inline">⚑ Report this post</summary>
+  <form method="post" action="/reports/new" class="mt-2 flex gap-2 max-w-md">
+    <input type="hidden" name="target_type" value="discussion">
+    <input type="hidden" name="target_id" value="{{ discussion.id }}">
+    <input type="hidden" name="redirect_to" value="/discussions/{{ discussion.id }}">
+    <input type="text" name="reason" placeholder="Why? (optional)"
+           class="flex-1 bg-canvas/40 border border-paper/15 rounded-sm px-2 py-1 text-xs text-paper placeholder:text-paper/30 focus:outline-none focus:ring-1 focus:ring-gold">
+    <button class="font-stamp text-[10px] text-rust uppercase tracking-widest shrink-0">Submit</button>
+  </form>
+</details>
+{% else %}
+<div class="mb-8"></div>
 {% endif %}
 
 <h3 class="font-display text-lg text-paper mb-4">Replies</h3>
 <div class="space-y-3 mb-6">
   {% for c in comments %}
+  {% set crc = comment_report_counts.get(c.id, 0) %}
   <div class="card-index rounded-sm p-3.5">
+    {% if crc >= hide_threshold %}
+    <details>
+      <summary class="cursor-pointer text-sm text-ink/40">This reply was reported multiple times — click to view anyway</summary>
+      <div class="mt-2">
+    {% endif %}
     <a href="/u/{{ c.profiles.username }}" class="font-semibold text-sm text-ink hover:text-gold-dark transition">{{ c.profiles.username }}</a>
     <p class="text-sm text-ink/80 mt-1">{{ c.body }}</p>
+    {% if current_user %}
+    <details class="mt-1.5">
+      <summary class="font-stamp text-[9px] text-ink/25 hover:text-rust uppercase tracking-widest cursor-pointer inline">⚑ Report</summary>
+      <form method="post" action="/reports/new" class="mt-1.5 flex gap-2">
+        <input type="hidden" name="target_type" value="discussion_comment">
+        <input type="hidden" name="target_id" value="{{ c.id }}">
+        <input type="hidden" name="redirect_to" value="/discussions/{{ discussion.id }}">
+        <input type="text" name="reason" placeholder="Why? (optional)"
+               class="flex-1 bg-canvas/40 border border-ink/15 rounded-sm px-2 py-1 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+        <button class="font-stamp text-[10px] text-rust uppercase tracking-widest shrink-0">Submit</button>
+      </form>
+    </details>
+    {% endif %}
+    {% if crc >= hide_threshold %}
+      </div>
+    </details>
+    {% endif %}
   </div>
   {% else %}
   <p class="text-paper/30 text-sm">No replies yet.</p>

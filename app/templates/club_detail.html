@@ -58,13 +58,38 @@
     <h3 class="font-display text-lg text-paper mb-3">Discussions</h3>
     <div class="space-y-3">
       {% for d in discussions %}
-      <a href="/discussions/{{ d.id }}" class="card-index rounded-sm block p-3.5 hover:-translate-y-0.5 transition-transform">
-        <div class="flex justify-between text-sm">
-          <span class="font-semibold text-ink">{{ d.title }}{% if d.spoiler %} <span class="text-rust text-xs">(spoilers)</span>{% endif %}</span>
-          {% if d.page_marker %}<span class="font-stamp text-xs text-ink/40">p.{{ d.page_marker }}</span>{% endif %}
-        </div>
-        <p class="font-stamp text-xs text-ink/40 mt-1">by {{ d.profiles.username }}</p>
-      </a>
+      {% set rc = report_counts.get(d.id, 0) %}
+      <div class="card-index rounded-sm p-3.5">
+        {% if rc >= hide_threshold %}
+        <details>
+          <summary class="cursor-pointer text-sm text-ink/40">This discussion was reported multiple times — click to view anyway</summary>
+          <div class="mt-2">
+        {% endif %}
+        <a href="/discussions/{{ d.id }}" class="block hover:-translate-y-0.5 transition-transform">
+          <div class="flex justify-between text-sm">
+            <span class="font-semibold text-ink">{{ d.title }}{% if d.spoiler %} <span class="text-rust text-xs">(spoilers)</span>{% endif %}</span>
+            {% if d.page_marker %}<span class="font-stamp text-xs text-ink/40">p.{{ d.page_marker }}</span>{% endif %}
+          </div>
+          <p class="font-stamp text-xs text-ink/40 mt-1">by {{ d.profiles.username }}</p>
+        </a>
+        {% if current_user %}
+        <details class="mt-1.5">
+          <summary class="font-stamp text-[9px] text-ink/25 hover:text-rust uppercase tracking-widest cursor-pointer inline">⚑ Report</summary>
+          <form method="post" action="/reports/new" class="mt-1.5 flex gap-2">
+            <input type="hidden" name="target_type" value="discussion">
+            <input type="hidden" name="target_id" value="{{ d.id }}">
+            <input type="hidden" name="redirect_to" value="/clubs/{{ club.id }}">
+            <input type="text" name="reason" placeholder="Why? (optional)"
+                   class="flex-1 bg-canvas/40 border border-ink/15 rounded-sm px-2 py-1 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+            <button class="font-stamp text-[10px] text-rust uppercase tracking-widest shrink-0">Submit</button>
+          </form>
+        </details>
+        {% endif %}
+        {% if rc >= hide_threshold %}
+          </div>
+        </details>
+        {% endif %}
+      </div>
       {% else %}
       <p class="text-paper/30 text-sm">No discussions yet.</p>
       {% endfor %}

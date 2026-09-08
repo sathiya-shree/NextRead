@@ -35,7 +35,7 @@ create table if not exists user_books (
   user_id uuid references profiles(id) on delete cascade,
   book_id uuid references books(id) on delete cascade,
   status text check (status in ('want_to_read','reading','read')) not null default 'want_to_read',
-  rating int check (rating between 1 and 5),
+  rating numeric(2,1) check (rating is null or (rating >= 1 and rating <= 5 and (rating * 2) = floor(rating * 2))),
   progress_pages int default 0,
   started_at timestamptz,
   finished_at timestamptz,
@@ -48,7 +48,7 @@ create table if not exists reviews (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id) on delete cascade,
   book_id uuid references books(id) on delete cascade,
-  rating int check (rating between 1 and 5) not null,
+  rating numeric(2,1) check (rating >= 1 and rating <= 5 and (rating * 2) = floor(rating * 2)) not null,
   body text,
   spoiler boolean default false,
   created_at timestamptz default now(),
@@ -151,6 +151,54 @@ create table if not exists list_books (
   unique (list_id, book_id)
 );
 
+-- Activity feed: manual posts + auto-logged reading milestones
+create table if not exists activity_posts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  type text check (type in ('post','started_reading','finished_reading')) not null default 'post',
+  body text,
+  book_id uuid references books(id) on delete set null,
+  created_at timestamptz default now()
+);
+
+-- Reports (reviews, discussions, comments, posts)
+create table if not exists reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_id uuid references profiles(id) on delete cascade,
+  target_type text check (target_type in ('review','discussion','discussion_comment','review_comment','activity_post')) not null,
+  target_id uuid not null,
+  reason text,
+  created_at timestamptz default now()
+);
+
+-- Notifications (follows, comments, likes, club joins)
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,   -- recipient
+  actor_id uuid references profiles(id) on delete cascade,  -- who triggered it
+  type text check (type in ('follow','review_comment','review_like','discussion_reply','club_join')) not null,
+  message text not null,
+  link text not null,
+  is_read boolean default false,
+  created_at timestamptz default now()
+);
+
+-- Yearly reading goals ("12 of 24 books this year")
+create table if not exists reading_goals (
+  user_id uuid references profiles(id) on delete cascade,
+  year int not null,
+  target int not null check (target > 0),
+  primary key (user_id, year)
+);
+
+-- One row per user per day they did something reading-related —
+-- the basis for computing streaks.
+create table if not exists reading_activity (
+  user_id uuid references profiles(id) on delete cascade,
+  activity_date date not null,
+  primary key (user_id, activity_date)
+);
+
 -- =========================================================
 -- Row Level Security
 -- =========================================================
@@ -168,6 +216,11 @@ alter table discussions enable row level security;
 alter table discussion_comments enable row level security;
 alter table custom_lists enable row level security;
 alter table list_books enable row level security;
+alter table notifications enable row level security;
+alter table reading_goals enable row level security;
+alter table reading_activity enable row level security;
+alter table activity_posts enable row level security;
+alter table reports enable row level security;
 
 -- Profiles: readable by everyone, editable by owner
 create policy "profiles_select_all" on profiles for select using (true);
@@ -177,6 +230,11 @@ create policy "profiles_insert_own" on profiles for insert with check (auth.uid(
 -- Books: readable by everyone, insertable by any logged-in user
 create policy "books_select_all" on books for select using (true);
 create policy "books_insert_auth" on books for insert with check (auth.uid() is not null);
+-- Any signed-in user can fix/enrich shared catalog metadata (e.g. backfilling
+-- a missing cover image) — same crowd-sourced spirit as insert.
+create policy "books_update_auth" on books for update
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 -- User books (shelves): only owner can see/edit their own shelf
 create policy "user_books_select_own" on user_books for select using (auth.uid() = user_id);
@@ -248,6 +306,42 @@ create policy "list_books_delete_owner" on list_books for delete
   using (
     exists (select 1 from custom_lists l where l.id = list_books.list_id and l.user_id = auth.uid())
   );
+
+-- Notifications: only the recipient can read/manage their own; any signed-in
+-- user can create one FOR someone else, but only naming themself as actor
+-- (prevents spoofing who triggered it).
+create policy "notifications_select_own" on notifications for select
+  using (auth.uid() = user_id);
+create policy "notifications_insert_as_actor" on notifications for insert
+  with check (auth.uid() = actor_id);
+create policy "notifications_update_own" on notifications for update
+  using (auth.uid() = user_id);
+create policy "notifications_delete_own" on notifications for delete
+  using (auth.uid() = user_id);
+
+-- Reading goals: private to the owner
+create policy "reading_goals_select_own" on reading_goals for select
+  using (auth.uid() = user_id);
+create policy "reading_goals_upsert_own" on reading_goals for insert
+  with check (auth.uid() = user_id);
+create policy "reading_goals_update_own" on reading_goals for update
+  using (auth.uid() = user_id);
+
+-- Reading activity: publicly viewable (so streaks can show on profiles),
+-- only the owner can log their own activity
+create policy "reading_activity_select_all" on reading_activity for select using (true);
+create policy "reading_activity_insert_own" on reading_activity for insert
+  with check (auth.uid() = user_id);
+
+-- Activity feed: public read, owner write/delete
+create policy "activity_posts_select_all" on activity_posts for select using (true);
+create policy "activity_posts_insert_own" on activity_posts for insert with check (auth.uid() = user_id);
+create policy "activity_posts_delete_own" on activity_posts for delete using (auth.uid() = user_id);
+
+-- Reports: open read (app only ever surfaces aggregate counts, never raw
+-- reasons/reporters), owner-only insert
+create policy "reports_select_all" on reports for select using (true);
+create policy "reports_insert_own" on reports for insert with check (auth.uid() = reporter_id);
 
 -- =========================================================
 -- Storage bucket for profile avatars

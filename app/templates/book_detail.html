@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_stars.html" import stars %}
 {% block title %}{{ book.title }} — Shelfie{% endblock %}
 {% block content %}
 <div class="grid md:grid-cols-3 gap-10">
@@ -28,6 +29,24 @@
       </form>
       {% endif %}
     </div>
+
+    {% if my_shelf and my_shelf.status == 'reading' and book.page_count %}
+    <div class="card-index rounded-sm p-4 mb-3">
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">Progress</p>
+      <form method="post" action="/books/{{ book.id }}/progress" class="space-y-2">
+        <div class="flex items-center gap-2">
+          <input type="number" name="progress_pages" min="0" max="{{ book.page_count }}"
+                 value="{{ my_shelf.progress_pages or 0 }}"
+                 class="w-20 bg-canvas/40 border border-ink/15 rounded-sm px-2 py-1 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+          <span class="text-xs text-ink/40">of {{ book.page_count }} pages</span>
+        </div>
+        <div class="w-full h-2 bg-canvas/60 rounded-full overflow-hidden">
+          <div class="h-full bg-gold rounded-full" style="width: {{ [100, ((my_shelf.progress_pages or 0) / book.page_count * 100) | round(1)] | min }}%"></div>
+        </div>
+        <button class="w-full bg-ink text-paper text-xs font-semibold rounded-sm py-1.5 hover:bg-gold hover:text-ink transition">Update progress</button>
+      </form>
+    </div>
+    {% endif %}
 
     <div class="card-index rounded-sm p-4 mb-3">
       <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">Add to a list</p>
@@ -68,7 +87,7 @@
     <p class="text-paper/50 font-stamp text-sm mb-3">by {{ book.author }}</p>
     <div class="flex items-center gap-3 text-sm mb-6">
       {% if avg_rating %}
-        <span class="star text-lg">{{ "★" * (avg_rating|round|int) }}{{ "☆" * (5 - (avg_rating|round|int)) }}</span>
+        <span class="star text-lg">{{ stars(avg_rating, empty_class='text-paper/15') }}</span>
         <span class="text-paper/50">{{ avg_rating }} avg · {{ rating_count }} rating{{ 's' if rating_count != 1 }}</span>
       {% else %}
         <span class="text-paper/30">No ratings yet</span>
@@ -81,14 +100,21 @@
 
     {% if current_user %}
     <div class="card-index rounded-sm p-5 mb-8 max-w-xl">
-      <h3 class="font-display text-xl text-ink mb-3">{{ 'Update your review' if my_review else 'Rate & review' }}</h3>
+      <div class="flex items-baseline justify-between mb-3">
+        <h3 class="font-display text-xl text-ink">{{ 'Update your review' if my_review else 'Rate & review' }}</h3>
+        {% if my_review %}
+        <form method="post" action="/books/{{ book.id }}/review/delete">
+          <button class="font-stamp text-[10px] text-ink/30 hover:text-rust uppercase tracking-widest" onclick="return confirm('Delete your review of this book?')">Delete review</button>
+        </form>
+        {% endif %}
+      </div>
       <form method="post" action="/books/{{ book.id }}/review" class="space-y-3">
-        <div class="star-picker flex gap-1 text-2xl" data-value="{{ my_review.rating if my_review else 0 }}">
-          {% for i in range(1,6) %}
-          <span class="cursor-pointer text-ink/20 star-opt" data-star="{{ i }}">★</span>
-          {% endfor %}
-          <input type="hidden" name="rating" id="rating-input" value="{{ my_review.rating if my_review else '' }}" required>
+        <div id="star-picker-row" class="relative inline-block cursor-pointer select-none text-3xl" style="letter-spacing:3px; white-space:nowrap;">
+          <span class="text-ink/15">★★★★★</span>
+          <span id="star-picker-fill" class="absolute inset-0 overflow-hidden text-gold" style="width: {{ ((my_review.rating if my_review else 0)/5*100) }}%;">★★★★★</span>
         </div>
+        <input type="hidden" name="rating" id="rating-input" value="{{ my_review.rating if my_review else '' }}" required>
+        <p class="font-stamp text-[10px] text-ink/30 uppercase tracking-widest">Tap for half-stars too — left side of a star vs. right side</p>
         <textarea name="body" rows="3" placeholder="Share your thoughts..."
                   class="w-full border border-ink/15 rounded-sm px-3 py-2 text-sm bg-paper text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-gold">{{ my_review.body if my_review else '' }}</textarea>
         <label class="flex items-center gap-2 text-xs text-ink/50">
@@ -99,22 +125,21 @@
     </div>
     <script>
       (function() {
-        const picker = document.querySelector('.star-picker');
-        if (!picker) return;
+        const row = document.getElementById('star-picker-row');
+        if (!row) return;
+        const fill = document.getElementById('star-picker-fill');
         const input = document.getElementById('rating-input');
-        const stars = picker.querySelectorAll('.star-opt');
-        function paint(n) {
-          stars.forEach(s => {
-            s.classList.toggle('text-gold', parseInt(s.dataset.star) <= n);
-            s.classList.toggle('text-ink/20', parseInt(s.dataset.star) > n);
-          });
+        function valueFromEvent(e) {
+          const rect = row.getBoundingClientRect();
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+          return Math.max(0.5, Math.round(pct * 5 * 2) / 2);
         }
-        paint(parseInt(picker.dataset.value) || 0);
-        stars.forEach(s => {
-          s.addEventListener('mouseenter', () => paint(parseInt(s.dataset.star)));
-          s.addEventListener('click', () => { input.value = s.dataset.star; paint(parseInt(s.dataset.star)); });
-        });
-        picker.addEventListener('mouseleave', () => paint(parseInt(input.value) || 0));
+        function paint(v) { fill.style.width = (v / 5 * 100) + '%'; }
+        row.addEventListener('mousemove', (e) => paint(valueFromEvent(e)));
+        row.addEventListener('click', (e) => { const v = valueFromEvent(e); input.value = v; paint(v); });
+        row.addEventListener('mouseleave', () => paint(parseFloat(input.value) || 0));
+        paint(parseFloat(input.value) || 0);
       })();
     </script>
     {% endif %}
@@ -122,10 +147,16 @@
     <h3 class="font-display text-xl text-paper mb-4">Reviews</h3>
     <div class="space-y-4">
       {% for r in reviews %}
+      {% set report_count = report_counts.get(r.id, 0) %}
       <div class="card-index rounded-sm p-4">
+        {% if report_count >= hide_threshold %}
+        <details>
+          <summary class="cursor-pointer text-sm text-ink/40">This review was reported multiple times — click to view anyway</summary>
+          <div class="mt-3">
+        {% endif %}
         <div class="flex justify-between items-start">
           <a href="/u/{{ r.profiles.username }}" class="font-semibold text-sm text-ink hover:text-gold-dark transition">{{ r.profiles.username }}</a>
-          <span class="star">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
+          <span class="star">{{ stars(r.rating) }}</span>
         </div>
         {% if r.spoiler %}
           <details class="text-sm mt-1"><summary class="cursor-pointer text-ink/40">Contains spoilers — click to reveal</summary><p class="mt-1 text-ink/80">{{ r.body }}</p></details>
@@ -137,6 +168,40 @@
           <input type="hidden" name="book_id" value="{{ book.id }}">
           <button class="font-stamp text-[10px] text-ink/30 hover:text-rust mt-2 uppercase tracking-widest">♥ Like</button>
         </form>
+        <details class="inline ml-2">
+          <summary class="font-stamp text-[10px] text-ink/30 hover:text-rust uppercase tracking-widest inline cursor-pointer">⚑ Report</summary>
+          <form method="post" action="/reports/new" class="mt-2 flex gap-2">
+            <input type="hidden" name="target_type" value="review">
+            <input type="hidden" name="target_id" value="{{ r.id }}">
+            <input type="hidden" name="redirect_to" value="/books/{{ book.id }}">
+            <input type="text" name="reason" placeholder="Why? (optional)"
+                   class="flex-1 bg-canvas/40 border border-ink/15 rounded-sm px-2 py-1 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+            <button class="font-stamp text-[10px] text-rust uppercase tracking-widest shrink-0">Submit</button>
+          </form>
+        </details>
+        {% endif %}
+
+        {% if r.review_comments %}
+        <div class="mt-3 space-y-2 border-t border-ink/10 pt-3">
+          {% for c in r.review_comments %}
+          <div class="text-xs">
+            <span class="font-semibold text-ink">{{ c.profiles.username }}</span>
+            <span class="text-ink/70">{{ c.body }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if current_user %}
+        <form method="post" action="/reviews/{{ r.id }}/comment" class="mt-2 flex gap-2">
+          <input type="hidden" name="book_id" value="{{ book.id }}">
+          <input type="text" name="body" required placeholder="Reply..."
+                 class="flex-1 bg-canvas/40 border border-ink/15 rounded-sm px-2 py-1 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+          <button class="font-stamp text-[10px] text-gold-dark hover:text-ink uppercase tracking-widest shrink-0">Reply</button>
+        </form>
+        {% endif %}
+        {% if report_count >= hide_threshold %}
+          </div>
+        </details>
         {% endif %}
       </div>
       {% else %}

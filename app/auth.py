@@ -29,11 +29,18 @@ def get_user_client(request: Request):
     """
     Supabase client authenticated as the current user (for RLS-protected writes).
 
-    Supabase access tokens expire (default ~1 hour). If we just reused the
-    token stored at login time, every write would start failing with a 500
-    once it expired, even though the person is still "logged in". So we
-    proactively refresh using the stored refresh_token before every
-    authenticated write, and update the session with the new tokens.
+    Supabase access tokens expire (default ~1 hour), and refresh_tokens are
+    single-use — once refreshed, the old refresh_token is invalidated. If the
+    refresh call itself fails (stale/already-used refresh_token), falling
+    back to the original access_token is pointless: it's already expired,
+    so the caller's query would just fail again with the identical
+    "JWT expired" error, uncaught, one function call later.
+
+    Instead, when refresh fails, we clear the dead session and return an
+    anonymous client. Read queries then simply return empty/RLS-scoped
+    results instead of crashing; the person effectively appears logged out
+    for this request, which is a safe, honest state (their refresh token
+    really is dead) rather than a raw error page.
     """
     session = get_session(request)
     if not session:
@@ -48,8 +55,5 @@ def get_user_client(request: Request):
         }
         return client_for_user(refreshed.session.access_token)
     except Exception:
-        # Refresh token itself is dead (long expired / revoked) — fall back
-        # to the old access token; the caller's request will fail cleanly
-        # with a Postgrest auth error instead of us crashing here.
-         request.session.pop("auth", None)
-    return client_for_user(None)
+        request.session.pop("auth", None)
+        return client_for_user(None)

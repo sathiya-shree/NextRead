@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_stars.html" import stars %}
 {% block title %}{{ profile.username }} — Shelfie{% endblock %}
 {% block content %}
 <div class="flex justify-between items-start mb-10 gap-4">
@@ -28,6 +29,59 @@
       <form method="post" action="/u/{{ profile.username }}/follow"><button class="text-sm bg-gold text-ink font-semibold rounded-full px-4 py-1.5 hover:bg-gold-dark transition">Follow</button></form>
       {% endif %}
     {% endif %}
+  </div>
+</div>
+
+<div class="grid sm:grid-cols-3 gap-4 mb-10">
+  <div class="card-index rounded-sm p-4 flex items-center gap-3">
+    <span class="text-3xl">🔥</span>
+    <div>
+      <p class="font-display text-2xl text-ink leading-none">{{ streak }}</p>
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mt-1">Day streak</p>
+    </div>
+  </div>
+
+  <div class="card-index rounded-sm p-4 sm:col-span-2">
+    {% if is_own %}
+      {% if goal %}
+      <div class="flex items-baseline justify-between mb-1.5">
+        <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40">{{ current_year }} goal</p>
+        <details class="relative">
+          <summary class="font-stamp text-[10px] text-gold-dark hover:text-ink uppercase tracking-widest cursor-pointer">Edit</summary>
+          <form method="post" action="/goals/set" class="absolute right-0 mt-1 card-index rounded-sm p-3 w-48 z-10 space-y-2">
+            <input type="hidden" name="redirect_to" value="/u/{{ profile.username }}">
+            <input type="number" name="target" min="1" max="1000" value="{{ goal.target }}" required
+                   class="w-full bg-canvas/40 border border-ink/15 rounded-sm px-2 py-1.5 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+            <button class="w-full bg-ink text-paper text-xs font-semibold rounded-sm py-1.5 hover:bg-gold hover:text-ink transition">Update goal</button>
+          </form>
+        </details>
+      </div>
+      <p class="font-display text-2xl text-ink mb-1.5">{{ books_read_this_year }} <span class="text-ink/30 text-base">of {{ goal.target }} books</span></p>
+      <div class="w-full h-2 bg-canvas/60 rounded-full overflow-hidden">
+        <div class="h-full bg-gold rounded-full" style="width: {{ [100, (books_read_this_year / goal.target * 100) | round(1)] | min }}%"></div>
+      </div>
+      {% else %}
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-2">{{ current_year }} reading goal</p>
+      <form method="post" action="/goals/set" class="flex gap-2">
+        <input type="hidden" name="redirect_to" value="/u/{{ profile.username }}">
+        <input type="number" name="target" min="1" max="1000" placeholder="e.g. 24" required
+               class="flex-1 bg-canvas/40 border border-ink/15 rounded-sm px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-gold">
+        <button class="bg-ink text-paper text-xs font-semibold rounded-sm px-4 py-1.5 hover:bg-gold hover:text-ink transition">Set goal</button>
+      </form>
+      {% endif %}
+    {% else %}
+      <p class="font-stamp text-[10px] uppercase tracking-widest text-ink/40 mb-1.5">{{ current_year }} so far</p>
+      <p class="font-display text-2xl text-ink">{{ books_read_this_year }} <span class="text-ink/30 text-base">books read</span></p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mb-10">
+  <p class="font-stamp text-[10px] uppercase tracking-widest text-paper/40 mb-3">Badges</p>
+  <div class="flex flex-wrap gap-2">
+    {% for b in badges %}
+    <span class="stamp {% if b.unlocked %}text-gold border-gold{% else %}text-paper/20 border-paper/20{% endif %}" title="{{ b.description }}">{{ b.name }}</span>
+    {% endfor %}
   </div>
 </div>
 
@@ -102,7 +156,7 @@
   <div class="card-index rounded-sm p-4">
     <div class="flex justify-between">
       <a href="/books/{{ r.books and r.book_id }}" class="font-semibold text-sm text-ink hover:text-gold-dark transition">{{ r.books.title }}</a>
-      <span class="star">{{ "★" * r.rating }}{{ "☆" * (5 - r.rating) }}</span>
+      <span class="star">{{ stars(r.rating) }}</span>
     </div>
     {% if r.body %}<p class="text-sm text-ink/80 mt-1">{{ r.body }}</p>{% endif %}
   </div>

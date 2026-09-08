@@ -3,6 +3,8 @@ from fastapi.responses import RedirectResponse
 from app.db import public_client
 from app.auth import get_current_user, get_user_client
 from app.templating import render
+from app.notifications import notify, log_activity
+from app.moderation import get_report_counts, HIDE_THRESHOLD
 
 router = APIRouter()
 
@@ -106,6 +108,8 @@ def club_detail(request: Request, club_id: str):
     # Books available to assign (any book in the catalog)
     all_books = public_client.table("books").select("id,title,author").limit(100).execute().data
 
+    report_counts = get_report_counts(public_client, "discussion", [d["id"] for d in discussions])
+
     return render(
         request,
         "club_detail.html",
@@ -115,6 +119,8 @@ def club_detail(request: Request, club_id: str):
         discussions=discussions,
         is_member=is_member,
         all_books=all_books,
+        report_counts=report_counts,
+        hide_threshold=HIDE_THRESHOLD,
     )
 
 
@@ -129,6 +135,18 @@ def join_club(request: Request, club_id: str):
         {"club_id": club_id, "user_id": user["id"], "role": "member"},
         on_conflict="club_id,user_id",
     ).execute()
+
+    club_row = public_client.table("clubs").select("owner_id,name").eq("id", club_id).limit(1).execute().data
+    if club_row:
+        notify(
+            client,
+            user_id=club_row[0]["owner_id"],
+            actor_id=user["id"],
+            type_="club_join",
+            message=f"{user['username']} joined {club_row[0]['name']}",
+            link=f"/clubs/{club_id}",
+        )
+
     return RedirectResponse(f"/clubs/{club_id}", status_code=303)
 
 
@@ -188,6 +206,7 @@ def new_discussion(
             "spoiler": spoiler,
         }
     ).execute()
+    log_activity(client, user["id"])
     return RedirectResponse(f"/clubs/{club_id}", status_code=303)
 
 
@@ -209,7 +228,21 @@ def discussion_detail(request: Request, discussion_id: str):
         .execute()
         .data
     )
-    return render(request, "discussion_detail.html", discussion=discussion, comments=comments)
+    comment_report_counts = get_report_counts(
+        public_client, "discussion_comment", [c["id"] for c in comments]
+    )
+    discussion_report_count = get_report_counts(
+        public_client, "discussion", [discussion_id]
+    ).get(discussion_id, 0)
+    return render(
+        request,
+        "discussion_detail.html",
+        discussion=discussion,
+        comments=comments,
+        comment_report_counts=comment_report_counts,
+        discussion_report_count=discussion_report_count,
+        hide_threshold=HIDE_THRESHOLD,
+    )
 
 
 @router.post("/discussions/{discussion_id}/comment")
@@ -222,4 +255,19 @@ def comment_discussion(request: Request, discussion_id: str, body: str = Form(..
     client.table("discussion_comments").insert(
         {"discussion_id": discussion_id, "user_id": user["id"], "body": body}
     ).execute()
+    log_activity(client, user["id"])
+
+    discussion_row = (
+        public_client.table("discussions").select("user_id").eq("id", discussion_id).limit(1).execute().data
+    )
+    if discussion_row:
+        notify(
+            client,
+            user_id=discussion_row[0]["user_id"],
+            actor_id=user["id"],
+            type_="discussion_reply",
+            message=f"{user['username']} replied to your discussion",
+            link=f"/discussions/{discussion_id}",
+        )
+
     return RedirectResponse(f"/discussions/{discussion_id}", status_code=303)
