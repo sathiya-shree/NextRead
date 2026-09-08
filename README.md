@@ -96,6 +96,8 @@ vercel --prod
 `SESSION_SECRET` can be any long random string — used to sign the login
 session cookie (`openssl rand -hex 32` works well).
 
+https://next-read-self.vercel.app/
+
 ## How auth works
 
 Supabase Auth issues a JWT `access_token` on login/signup. Shelfie stores that
